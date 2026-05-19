@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Bonnet placeholder">
+  <rect width="900" height="1200" fill="#fbf5fb"/>
+  <circle cx="450" cy="480" r="280" fill="#4f0254"/>
+  <circle cx="450" cy="480" r="220" fill="#b3899e"/>
+  <path d="M230 480C315 395 585 395 670 480" fill="none" stroke="#e01386" stroke-width="42" stroke-linecap="round"/>
+  <path d="M240 585C360 660 540 660 660 585" fill="none" stroke="#fbf5fb" stroke-width="36" stroke-linecap="round" opacity=".8"/>
+  <path d="M220 770H680" stroke="#351e49" stroke-width="36" stroke-linecap="round"/>
+  <text x="450" y="960" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="78" fill="#4f0254">Bonnet</text>
+  <text x="450" y="1025" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#351e49" letter-spacing="5">IMAGE PLACEHOLDER</text>
+</svg>

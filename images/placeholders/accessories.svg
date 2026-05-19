@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Fascinator placeholder">
+  <rect width="900" height="1200" fill="#fbf5fb"/>
+  <rect x="70" y="90" width="760" height="1020" fill="#ffffff" stroke="#b3899e" stroke-width="8"/>
+  <path d="M230 395C300 570 600 570 670 395" fill="none" stroke="#4f0254" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="230" cy="395" r="46" fill="#dcdc44"/>
+  <circle cx="330" cy="505" r="40" fill="#e01386"/>
+  <circle cx="450" cy="540" r="44" fill="#4f0254"/>
+  <circle cx="570" cy="505" r="40" fill="#981e23"/>
+  <circle cx="670" cy="395" r="46" fill="#dcdc44"/>
+  <rect x="320" y="670" width="260" height="145" rx="4" fill="#351e49"/>
+  <rect x="350" y="700" width="200" height="85" fill="#fbf5fb"/>
+  <text x="450" y="950" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="72" fill="#4f0254">Fascinator</text>
+  <text x="450" y="1015" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#351e49" letter-spacing="5">IMAGE PLACEHOLDER</text>
+</svg>

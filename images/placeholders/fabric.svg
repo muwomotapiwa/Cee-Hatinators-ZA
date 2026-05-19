@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Accessory placeholder">
+  <defs>
+    <pattern id="print" width="120" height="120" patternUnits="userSpaceOnUse">
+      <rect width="120" height="120" fill="#fbf5fb"/>
+      <circle cx="30" cy="30" r="20" fill="#dcdc44" opacity=".82"/>
+      <circle cx="90" cy="90" r="20" fill="#4f0254" opacity=".86"/>
+      <path d="M0 90C30 60 60 60 120 90M0 30C30 0 60 0 120 30" fill="none" stroke="#e01386" stroke-width="10" opacity=".62"/>
+      <path d="M60 0V120" stroke="#351e49" stroke-width="3" opacity=".22"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="1200" fill="url(#print)"/>
+  <rect x="110" y="150" width="680" height="900" fill="#ffffff" opacity=".7"/>
+  <text x="450" y="565" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="82" fill="#4f0254">Accessory</text>
+  <text x="450" y="635" text-anchor="middle" font-family="Arial, sans-serif" font-size="25" fill="#351e49" letter-spacing="5">IMAGE PLACEHOLDER</text>
+</svg>

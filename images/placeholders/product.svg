@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" role="img" aria-label="Cee Hatinators product placeholder">
+  <defs>
+    <pattern id="weave" width="72" height="72" patternUnits="userSpaceOnUse">
+      <rect width="72" height="72" fill="#fbf5fb"/>
+      <path d="M0 18H72M0 54H72M18 0V72M54 0V72" stroke="#b3899e" stroke-width="6" opacity=".45"/>
+      <path d="M0 0L72 72M72 0L0 72" stroke="#4f0254" stroke-width="2" opacity=".22"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="1200" fill="url(#weave)"/>
+  <rect x="90" y="120" width="720" height="960" fill="#ffffff" opacity=".74"/>
+  <rect x="130" y="160" width="640" height="880" fill="none" stroke="#4f0254" stroke-width="6"/>
+  <text x="450" y="552" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="74" fill="#4f0254">Cee Hatinators</text>
+  <text x="450" y="625" text-anchor="middle" font-family="Arial, sans-serif" font-size="27" fill="#351e49" letter-spacing="5">PRODUCT IMAGE</text>
+  <text x="450" y="675" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#b3899e" letter-spacing="3">PLACEHOLDER</text>
+</svg>
