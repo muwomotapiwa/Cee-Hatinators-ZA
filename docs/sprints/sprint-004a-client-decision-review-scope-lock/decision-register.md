@@ -1,0 +1,30 @@
+# Decision Register - Sprint 004A
+
+No business decision is approved unless it is explicitly confirmed in existing docs. Proposed defaults are recommendations for client review only.
+
+| Decision Area | Decision Needed | Options | Proposed Default | Status | Required Before Sprint | Notes |
+|---|---|---|---|---|---|---|
+| Product categories | Confirm launch category list. | Small launch list, full catalogue categories, phased categories. | Small approved launch category list. | Proposed, not approved | Sprint 005A | Needed before Firestore catalogue schema and seed plan. |
+| Collections | Decide whether collections are separate from categories. | Categories only, categories plus collections. | Categories plus optional collections. | Proposed, not approved | Sprint 005A | Collections may support campaigns or seasonal edits. |
+| Product slugs | Decide public URL identifier strategy. | Firestore ID only, slug only, both ID and slug. | Unique slug with Firestore document ID. | Proposed, not approved | Sprint 005A | Product detail route and SEO depend on this. |
+| Product variants | Confirm launch variant rules. | No variants, standard sizes/colors, full variant model. | Base product plus ProductVariant records. | Proposed, not approved | Sprint 005A | Affects cart identity, stock, orders, and admin workflows. |
+| Custom orders | Decide launch handling for custom/made-to-order items. | Not at launch, quote first, paid upfront, deposit. | Quote-first custom orders later. | Proposed, not approved | Sprint 005A | Custom orders can affect pricing, checkout, and fulfillment. |
+| Stock tracking | Confirm stock granularity. | No launch stock, per product, per variant. | Per variant when variants exist, otherwise per product. | Proposed, not approved | Sprint 005A | Browser must never own stock authority. |
+| Stock reservation timing | Decide when stock is reserved. | During validation, checkout session creation, after payment, during fulfillment. | Reserve only through backend-controlled checkout/payment flow. | Proposed, not approved | Sprint 005B | Needed before checkout backend and inventory implementation. |
+| Image storage provider | Confirm product image platform. | Firebase Storage, Cloudinary. | Firebase Storage. | Proposed, not approved | Sprint 005A | Upload/admin workflows depend on provider. |
+| Multiple product images | Decide if multiple images are required at launch. | Single image, multiple images, gallery plus video. | Multiple images per product. | Proposed, not approved | Sprint 005A | Affects product model and storefront display. |
+| Variant-specific images | Decide whether images attach to variants. | No, optional, required. | Optional after launch. | Deferred | Post-launch or variant sprint | Avoids adding complexity to initial schema unless approved. |
+| Payment provider | Confirm approved payment provider. | Stripe, PayFast, PayPal, manual EFT. | Stripe. | Proposed, not approved | Sprint 005B | Backend and webhook work depend on this. |
+| Checkout style | Confirm payment checkout experience. | Hosted checkout, embedded payment elements, manual payment. | Hosted checkout. | Proposed, not approved | Sprint 005B | Hosted checkout reduces frontend payment handling risk. |
+| Guest checkout | Decide account requirement. | Guest only, account required, both guest and account. | Both guest and customer accounts. | Proposed, not approved | Sprint 005B | Affects checkout, order lookup, and permissions. |
+| Required checkout fields | Confirm required customer details. | Name/email only, phone, shipping address, billing address, notes. | Name, email, phone, shipping address for delivery. | Proposed, not approved | Sprint 005B | Affects validation and order records. |
+| Shipping countries | Confirm supported launch countries. | One country, selected countries, multi-country. | Pending client approval. | Pending client approval | Sprint 005B | Required before checkout totals. |
+| Shipping methods | Confirm launch fulfillment methods. | Pickup, local courier, national courier, manual quote. | Local pickup plus courier delivery. | Proposed, not approved | Sprint 005B | Affects checkout options and fulfillment status. |
+| Shipping fees | Confirm fee calculation. | Flat fee, area-based, provider-calculated, manual quote. | Flat fee for MVP. | Proposed, not approved | Sprint 005B | Fees must be backend-authoritative. |
+| Local pickup | Decide whether pickup is offered. | No pickup, one pickup location, multiple locations. | One local pickup option if business confirms. | Proposed, not approved | Sprint 005B | Affects checkout required address fields. |
+| Admin users | Confirm who gets admin access. | Owner only, owner plus staff, temporary developer access. | Pending client approval. | Pending client approval | Admin sprint | Must be explicit before admin dashboard work. |
+| Admin authorization model | Confirm first admin authorization model. | `admins/{uid}`, custom claims, phased approach. | `admins/{uid}` first, custom claims later. | Proposed, not approved | Admin sprint | Current project already checks `admins/{uid}`. |
+| Promo codes | Decide whether launch needs promo codes. | No launch promos, simple codes, full promo management. | Defer promo codes until after launch. | Deferred | Post-launch unless approved | Discounts must be backend-authoritative. |
+| Order emails | Confirm launch email notifications. | None, customer confirmation, customer plus admin emails. | Customer confirmation plus admin new-order email. | Proposed, not approved | Sprint 005B or notification sprint | Requires backend/email provider decision. |
+| Tax invoices | Confirm invoice requirements. | None, receipt only, tax invoice. | Pending client approval. | Pending client approval | Checkout/payment sprint | Tax requirements affect order and email documents. |
+| Returns/refunds | Decide launch returns/refunds scope. | Policy only, manual review, customer returns portal, partial refunds. | Policy plus manual review; portal later. | Deferred | Post-launch unless approved | Refunds must align with payment provider and backend controls. |
