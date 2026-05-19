@@ -1,5 +1,6 @@
 import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../lib/mockData';
 import { useProductModal } from '../context/ProductModalContext';
+import { SafeImage } from './SafeImage';
 
 export function CategoryGrid() {
   const { openProductModal } = useProductModal();
@@ -27,12 +28,12 @@ export function CategoryGrid() {
               className={`relative overflow-hidden group cursor-pointer aspect-[3/4] ${cat.featured ? 'col-span-2 row-span-1 sm:row-span-2 aspect-auto' : ''}`}
               onClick={() => handleCategoryClick(cat.name)}
             >
-              <img
+              <SafeImage
                 src={cat.image}
                 alt={cat.name}
-                className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-105 brightness-80 group-hover:brightness-60"
+                className="w-full h-full object-cover transition-transform duration-600 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-crimson-dark/80 via-transparent to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-crimson/85 group-hover:to-crimson/20">
+              <div className="absolute inset-0 flex flex-col justify-end p-6 transition-all duration-300">
                 <span className="text-[10px] tracking-[3px] uppercase text-gold mb-1.5">{cat.label}</span>
                 <h3 className={`serif font-normal text-white leading-[1.2] ${cat.featured ? 'text-4xl' : 'text-2xl'}`}>
                   {cat.name}

@@ -73,7 +73,7 @@ export function AccountPage() {
         <div className="mb-10 sm:mb-14 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {user.photoURL
-              ? <img src={user.photoURL} alt={user.displayName || ''} className="w-14 h-14 rounded-full border border-silver" />
+              ? <SafeImage src={user.photoURL} alt={user.displayName || ''} className="w-14 h-14 rounded-full border border-silver object-cover" />
               : <div className="w-14 h-14 bg-crimson text-white flex items-center justify-center serif text-2xl font-light">{(user.displayName || user.email || 'U')[0].toUpperCase()}</div>
             }
             <div>

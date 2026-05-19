@@ -27,7 +27,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <div className="min-h-screen">
         <AnnouncementBar />
         <Header 

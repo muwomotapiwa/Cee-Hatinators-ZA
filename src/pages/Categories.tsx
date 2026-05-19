@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MOCK_CATEGORIES } from '../lib/mockData';
+import { SafeImage } from '../components/SafeImage';
 
 export function CategoriesPage() {
   return (
@@ -19,10 +20,10 @@ export function CategoriesPage() {
               key={cat.id}
               className="relative aspect-square overflow-hidden group block"
             >
-              <img 
-                src={cat.image} 
-                alt={cat.name} 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-75 group-hover:brightness-50"
+              <SafeImage
+                src={cat.image}
+                alt={cat.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 <span className="text-[10px] tracking-[3px] uppercase text-gold mb-2 opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 delay-75">

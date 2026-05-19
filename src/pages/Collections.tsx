@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { PLACEHOLDER_IMAGES } from '../lib/imagePlaceholders';
+import { SafeImage } from '../components/SafeImage';
 
 export function CollectionsPage() {
   const collections = [
@@ -42,11 +43,11 @@ export function CollectionsPage() {
               className={`flex flex-col ${idx % 2 !== 0 ? 'md:flex-row-reverse' : 'md:flex-row'} gap-8 md:gap-16 items-center group`}
             >
               <div className="w-full md:w-1/2 aspect-[4/3] overflow-hidden">
-                <img
-                  src={col.image}
-                  alt={col.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
+                  <SafeImage
+                    src={col.image}
+                    alt={col.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
               </div>
               <div className="w-full md:w-1/2 flex flex-col justify-center text-center md:text-left px-4 md:px-0">
                 <h2 className="serif text-3xl sm:text-5xl font-light text-dark mb-4 group-hover:text-crimson transition-colors">

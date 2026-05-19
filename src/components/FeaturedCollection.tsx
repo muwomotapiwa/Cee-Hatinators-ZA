@@ -2,6 +2,7 @@ import { Button } from './Button';
 import { useProductModal } from '../context/ProductModalContext';
 import { MOCK_PRODUCTS } from '../lib/mockData';
 import { PLACEHOLDER_IMAGES } from '../lib/imagePlaceholders';
+import { SafeImage } from './SafeImage';
 
 export function FeaturedCollection() {
   const { openProductModal } = useProductModal();
@@ -17,21 +18,21 @@ export function FeaturedCollection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           <div className="grid grid-cols-2 grid-rows-[auto_auto] gap-2 sm:gap-3">
             <div className="col-span-2 h-[200px] sm:h-[300px] overflow-hidden group cursor-pointer" onClick={handleImageClick}>
-              <img
+              <SafeImage
                 src={PLACEHOLDER_IMAGES.headwrap}
                 alt="Cee Hatinators signature headwear"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               />
             </div>
             <div className="h-[200px] overflow-hidden group cursor-pointer" onClick={handleImageClick}>
-              <img
+              <SafeImage
                 src={PLACEHOLDER_IMAGES.accessories}
                 alt="Royal plum fascinator"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               />
             </div>
             <div className="h-[200px] overflow-hidden group cursor-pointer" onClick={handleImageClick}>
-              <img
+              <SafeImage
                 src={PLACEHOLDER_IMAGES.clothing}
                 alt="Occasion church hat"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"

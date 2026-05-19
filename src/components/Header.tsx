@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from './BrandMark';
+import { SafeImage } from './SafeImage';
 
 interface HeaderProps {
   onCartToggle: () => void;
@@ -92,9 +93,9 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
               <div className="flex items-center gap-4">
                 <Link to="/account" className="flex items-center gap-2 hover:opacity-80 transition-opacity" title="My Account">
                   {user.photoURL
-                    ? <img src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full border border-silver" />
-                    : <span className="w-8 h-8 rounded-full bg-crimson text-white flex items-center justify-center text-[12px] font-semibold">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
-                  }
+                      ? <SafeImage src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full border border-silver object-cover" />
+                      : <span className="w-8 h-8 rounded-full bg-crimson text-white flex items-center justify-center text-[12px] font-semibold">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
+                    }
                 </Link>
                 <button className="icon-btn" title="Sign Out" onClick={handleLogout}><LogOut size={16} /></button>
               </div>
@@ -142,7 +143,7 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
             <>
               <div className="flex items-center gap-3">
                 {user.photoURL
-                  ? <img src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full" />
+                  ? <SafeImage src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full object-cover" />
                   : <span className="w-8 h-8 rounded-full bg-crimson text-white flex items-center justify-center text-[12px] font-semibold">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
                 }
                 <span className="text-xs uppercase tracking-widest">{user.displayName || user.email}</span>
