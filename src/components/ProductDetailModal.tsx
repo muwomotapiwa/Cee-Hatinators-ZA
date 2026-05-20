@@ -3,6 +3,7 @@ import { X, Heart, Minus, Plus } from 'lucide-react';
 import { Button } from './Button';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { ProductColorImage } from './ProductColorImage';
 
 interface ProductDetailModalProps {
@@ -15,6 +16,7 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState('');
   const { addToCart } = useCart();
+  const { user } = useAuth();
 
   useEffect(() => {
     setSelectedColor(product?.colors[0] || '');
@@ -25,6 +27,11 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
   const handleAddToCart = () => {
     addToCart(product, quantity);
     onClose();
+  };
+
+  const handleWishlistClick = () => {
+    onClose();
+    window.location.hash = user ? '#/wishlist' : '#/login?redirect=/wishlist';
   };
 
   return (
@@ -99,7 +106,11 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
           <Button variant="crimson" className="w-full mb-3" onClick={handleAddToCart}>
             Add to Bag - GBP {(product.price * quantity).toFixed(2)}
           </Button>
-          <button className="w-full p-[15px] bg-transparent text-dark border border-silver font-sans text-[11px] tracking-[3px] uppercase cursor-pointer transition-all hover:border-crimson hover:text-crimson flex items-center justify-center gap-2">
+          <button
+            type="button"
+            className="w-full p-[15px] bg-transparent text-dark border border-silver font-sans text-[11px] tracking-[3px] uppercase cursor-pointer transition-all hover:border-crimson hover:text-crimson flex items-center justify-center gap-2"
+            onClick={handleWishlistClick}
+          >
             <Heart size={14} /> Add to Wishlist
           </button>
 

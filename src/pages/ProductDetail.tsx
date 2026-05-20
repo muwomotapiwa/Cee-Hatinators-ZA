@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { ProductService } from '../services/ProductService';
 import { Button } from '../components/Button';
 import { ProductCard } from '../components/ProductCard';
@@ -17,6 +18,8 @@ export function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -42,6 +45,10 @@ export function ProductDetailPage() {
       addToCart(product);
     }
     // Optionally open cart here
+  };
+
+  const handleWishlistClick = () => {
+    navigate(user ? '/wishlist' : '/login?redirect=/wishlist');
   };
 
   return (
@@ -165,7 +172,13 @@ export function ProductDetailPage() {
               <Button onClick={handleAddToCart} variant="primary" className="h-12 flex-1">
                 Add to Bag - GBP {(product.price * quantity).toFixed(2)}
               </Button>
-              <button className="h-12 w-12 shrink-0 border border-silver flex items-center justify-center text-charcoal hover:border-crimson hover:text-crimson transition-colors">
+              <button
+                type="button"
+                className="h-12 w-12 shrink-0 border border-silver flex items-center justify-center text-charcoal hover:border-crimson hover:text-crimson transition-colors"
+                title="Wishlist"
+                aria-label={`View wishlist for ${product.name}`}
+                onClick={handleWishlistClick}
+              >
                 <Heart size={18} />
               </button>
             </div>

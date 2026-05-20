@@ -3,35 +3,18 @@ interface BrandMarkProps {
 }
 
 export function BrandMark({ tone = 'dark' }: BrandMarkProps) {
-  const isLight = tone === 'light';
+  const logoSrc = `${import.meta.env.BASE_URL}images/ceehatinators-logo.jpeg`;
+  const frameTone = tone === 'light' ? 'border-crimson' : 'border-crimson';
 
   return (
-    <span className="inline-flex items-center gap-3">
-      <span
-        className={`serif flex h-11 w-11 items-center justify-center border text-[19px] font-light italic leading-none ${
-          isLight
-            ? 'border-gold/70 text-gold-light'
-            : 'border-crimson text-crimson'
-        }`}
-      >
-        C
-      </span>
-      <span className="flex flex-col leading-none">
-        <span
-          className={`serif text-[24px] font-light tracking-[0px] ${
-            isLight ? 'text-offwhite' : 'text-dark'
-          }`}
-        >
-          Cee
-        </span>
-        <span
-          className={`text-[9px] uppercase tracking-[2.8px] ${
-            isLight ? 'text-mauve' : 'text-charcoal'
-          }`}
-        >
-          Hatinators
-        </span>
-      </span>
+    <span
+      className={`inline-flex items-center justify-center overflow-hidden border bg-white p-1 ${frameTone}`}
+    >
+      <img
+        src={logoSrc}
+        alt="Cee Hatinators"
+        className="h-11 w-[120px] object-contain md:h-16 md:w-[190px]"
+      />
     </span>
   );
 }

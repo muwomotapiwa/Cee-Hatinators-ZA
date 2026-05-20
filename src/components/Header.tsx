@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Search, Heart, ShoppingBag, X, LogIn, LogOut, Menu } from 'lucide-react';
 import { useSearch } from '../context/SearchContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,10 +16,17 @@ interface HeaderProps {
 export function Header({ onCartToggle, cartCount }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
   const { searchQuery, setSearchQuery } = useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      mobileSearchInputRef.current?.focus();
+    }
+  }, [isSearchOpen]);
 
   const handleLogin = () => {
     // Pass current path as redirect so user returns here after signing in
@@ -37,14 +44,27 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
     { label: 'Collections', to: '/collections' },
   ];
 
+  const toggleSearch = () => {
+    setIsMobileMenuOpen(false);
+    setIsSearchOpen((open) => !open);
+  };
+
+  const closeSearch = () => {
+    setIsSearchOpen(false);
+  };
+
   return (
-    <header className="bg-offwhite border-b border-silver sticky top-0 z-[100] backdrop-blur-md">
+    <header className="bg-white border-b border-silver sticky top-0 z-[100] shadow-sm">
       <div className="max-w-[1400px] mx-auto px-4 md:px-10 grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] items-center h-16 md:h-20">
         
         {/* Mobile Menu Toggle */}
         <button 
-          className="md:hidden p-2 -ml-2 text-charcoal hover:text-crimson transition-colors"
-          onClick={() => setIsMobileMenuOpen(true)}
+          className={`md:hidden p-2 -ml-2 rounded-full transition-colors ${isMobileMenuOpen ? 'bg-crimson text-gold' : 'text-charcoal hover:text-crimson'}`}
+          onClick={() => {
+            closeSearch();
+            setIsMobileMenuOpen(true);
+          }}
+          aria-label="Open menu"
         >
           <Menu size={20} />
         </button>
@@ -63,7 +83,7 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
         
         <div className="flex gap-2 md:gap-6 items-center justify-end">
           <div className="relative flex items-center">
-            <div className={`overflow-hidden transition-all duration-300 flex items-center absolute right-full ${isSearchOpen ? 'w-48 md:w-64 opacity-100 mr-2' : 'w-0 opacity-0'}`}>
+            <div className={`hidden md:flex overflow-hidden transition-all duration-300 items-center absolute right-full ${isSearchOpen ? 'w-48 md:w-64 opacity-100 mr-2' : 'w-0 opacity-0'}`}>
               <input 
                 type="text"
                 value={searchQuery}
@@ -81,7 +101,8 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
             <button 
               className="icon-btn border-none md:border" 
               title="Search"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              aria-label="Search"
+              onClick={toggleSearch}
             >
               <Search size={16} />
             </button>
@@ -115,24 +136,55 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
         </div>
       </div>
 
+      <div
+        className={`md:hidden overflow-hidden border-t border-silver bg-white transition-all duration-300 ${
+          isSearchOpen ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[2px] text-mid-gray">
+            <span>Home / Search</span>
+            <button
+              className="text-[10px] uppercase tracking-[2px] text-charcoal hover:text-crimson"
+              onClick={closeSearch}
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-3 border border-crimson bg-white px-3 py-3">
+            <Search size={16} className="shrink-0 text-crimson" />
+            <input
+              ref={mobileSearchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search hats, fascinators, collections..."
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-dark outline-none placeholder:text-mid-gray"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Mobile Drawer */}
       <div 
-        className={`fixed inset-0 bg-crimson-dark/60 backdrop-blur-md z-[200] md:hidden transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-crimson-dark/70 z-[300] md:hidden backdrop-blur-sm transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMobileMenuOpen(false)}
       />
       <div 
-        className={`fixed top-0 left-0 bottom-0 w-64 bg-offwhite z-[201] md:hidden transform transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 bottom-0 w-full sm:w-[400px] bg-white z-[400] md:hidden flex flex-col border-r border-silver shadow-[8px_0_32px_rgba(0,0,0,0.18)] transition-transform duration-300 ease-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="p-4 border-b border-silver flex justify-between items-center">
-          <span className="text-[10px] tracking-[2px] uppercase font-semibold text-charcoal">Menu</span>
-          <button onClick={() => setIsMobileMenuOpen(false)}><X size={20} /></button>
+        <div className="p-6 px-7 border-b border-silver bg-white flex justify-between items-center">
+          <span className="text-[11px] tracking-[3px] uppercase text-dark font-medium">Menu</span>
+          <button className="bg-transparent border-none text-xl cursor-pointer text-charcoal w-8 h-8 flex items-center justify-center hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
-        <nav className="p-6 flex flex-col gap-6">
+        <nav className="flex-1 overflow-y-auto px-7 py-5 bg-white flex flex-col gap-6">
           {navLinks.map(link => (
             <Link 
               key={link.label} 
               to={link.to} 
-              className="text-sm tracking-[2px] uppercase text-charcoal hover:text-crimson"
+              className="text-sm tracking-[2px] uppercase text-dark font-medium hover:text-crimson"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               {link.label}
@@ -146,11 +198,11 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
                   ? <SafeImage src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full object-cover" />
                   : <span className="w-8 h-8 rounded-full bg-crimson text-white flex items-center justify-center text-[12px] font-semibold">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
                 }
-                <span className="text-xs uppercase tracking-widest">{user.displayName || user.email}</span>
+                <span className="text-xs uppercase tracking-widest text-dark">{user.displayName || user.email}</span>
               </div>
-              <Link to="/account" className="text-left text-xs uppercase tracking-[2px] text-charcoal hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>My Account</Link>
+              <Link to="/account" className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>My Account</Link>
               <button 
-                className="text-left text-xs uppercase tracking-[2px] text-crimson"
+                className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson"
                 onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
               >
                 Sign Out
@@ -159,12 +211,12 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
           ) : (
             <>
               <button 
-                className="text-left text-xs uppercase tracking-[2px] text-charcoal"
+                className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson"
                 onClick={() => { handleLogin(); setIsMobileMenuOpen(false); }}
               >
                 Sign In
               </button>
-              <Link to="/register" className="text-left text-xs uppercase tracking-[2px] text-charcoal hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>Create Account</Link>
+              <Link to="/register" className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>Create Account</Link>
             </>
           )}
         </nav>

@@ -3,6 +3,7 @@ import { Heart, Plus } from 'lucide-react';
 import { Product } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { ProductColorImage } from './ProductColorImage';
+import { useAuth } from '../context/AuthContext';
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, onClick }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedColor, setSelectedColor] = React.useState(product.colors[0] || '');
   const badgeColors = {
     sale: 'bg-gold text-crimson-dark',
@@ -22,6 +24,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, o
   React.useEffect(() => {
     setSelectedColor(product.colors[0] || '');
   }, [product.id, product.colors]);
+
+  const handleWishlistClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    navigate(user ? '/wishlist' : '/login?redirect=/wishlist');
+  };
 
   return (
     <div className="group cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
@@ -41,7 +48,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, o
         )}
 
         <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
-          <button className="w-9 h-9 bg-white border-0 flex items-center justify-center cursor-pointer text-dark transition-all duration-200 hover:bg-crimson hover:text-white" title="Wishlist">
+          <button
+            type="button"
+            className="w-9 h-9 bg-white border-0 flex items-center justify-center cursor-pointer text-dark transition-all duration-200 hover:bg-crimson hover:text-white"
+            title="Wishlist"
+            aria-label={`View wishlist for ${product.name}`}
+            onClick={handleWishlistClick}
+          >
             <Heart size={14} />
           </button>
           <button

@@ -1,6 +1,16 @@
+import { useNavigate } from 'react-router-dom';
 import { Button } from './Button';
 
 export function Hero() {
+  const navigate = useNavigate();
+
+  const scrollToCategories = () => {
+    document.getElementById('categories')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+
   return (
     <section className="relative h-[92vh] max-h-[820px] overflow-hidden bg-crimson-dark">
       <div
@@ -26,8 +36,8 @@ export function Hero() {
           Elegant hatinators, fascinators, and statement headpieces in royal purple, orchid, mauve, and confident colour.
         </p>
         <div className="flex flex-col xs:flex-row gap-3 sm:gap-4 items-stretch xs:items-center mt-2">
-          <Button variant="primary">Explore Collection</Button>
-          <Button variant="ghost">Our Story</Button>
+          <Button variant="primary" onClick={scrollToCategories}>Explore Collection</Button>
+          <Button variant="ghost" onClick={() => navigate('/our-story')}>Our Story</Button>
         </div>
       </div>
 

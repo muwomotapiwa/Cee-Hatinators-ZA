@@ -1,15 +1,9 @@
-import { MOCK_CATEGORIES, MOCK_PRODUCTS } from '../lib/mockData';
-import { useProductModal } from '../context/ProductModalContext';
+import { Link } from 'react-router-dom';
+import { MOCK_CATEGORIES } from '../lib/mockData';
+import { getShopPathForCategoryTile } from '../lib/categoryRoutes';
 import { SafeImage } from './SafeImage';
 
 export function CategoryGrid() {
-  const { openProductModal } = useProductModal();
-
-  const handleCategoryClick = (categoryName: string) => {
-    const product = MOCK_PRODUCTS.find(p => p.category.toLowerCase().includes(categoryName.toLowerCase().split(' ')[0]));
-    if (product) openProductModal(product);
-  };
-
   return (
     <section id="categories" className="py-20">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10">
@@ -23,10 +17,11 @@ export function CategoryGrid() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-0.5 sm:gap-1">
           {MOCK_CATEGORIES.map((cat) => (
-            <div
+            <Link
               key={cat.id}
+              to={getShopPathForCategoryTile(cat.name)}
               className={`relative overflow-hidden group cursor-pointer aspect-[3/4] ${cat.featured ? 'col-span-2 row-span-1 sm:row-span-2 aspect-auto' : ''}`}
-              onClick={() => handleCategoryClick(cat.name)}
+              aria-label={`Shop ${cat.name}`}
             >
               <SafeImage
                 src={cat.image}
@@ -42,7 +37,7 @@ export function CategoryGrid() {
                   {cat.count} -&gt;
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

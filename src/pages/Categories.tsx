@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { MOCK_CATEGORIES } from '../lib/mockData';
+import { getShopPathForCategoryTile } from '../lib/categoryRoutes';
 import { SafeImage } from '../components/SafeImage';
 
 export function CategoriesPage() {
@@ -16,9 +17,10 @@ export function CategoriesPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {MOCK_CATEGORIES.map((cat) => (
             <Link 
-              to={`/shop?category=${cat.name}`} 
+              to={getShopPathForCategoryTile(cat.name)} 
               key={cat.id}
               className="relative aspect-square overflow-hidden group block"
+              aria-label={`Shop ${cat.name}`}
             >
               <SafeImage
                 src={cat.image}

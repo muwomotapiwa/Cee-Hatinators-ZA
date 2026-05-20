@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { BrandMark } from './BrandMark';
 
 export function Footer() {
   return (
@@ -7,7 +6,19 @@ export function Footer() {
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-10 sm:gap-15">
         <div className="footer-brand max-w-sm">
           <Link to="/" aria-label="Cee Hatinators home" className="inline-flex no-underline mb-6">
-            <BrandMark tone="light" />
+            <span className="inline-flex items-center gap-3">
+              <span className="serif flex h-11 w-11 items-center justify-center border border-gold/70 text-[19px] font-light italic leading-none text-gold-light">
+                C
+              </span>
+              <span className="flex flex-col leading-none">
+                <span className="serif text-[24px] font-light text-offwhite">
+                  Cee
+                </span>
+                <span className="text-[9px] uppercase tracking-[2.8px] text-mauve">
+                  Hatinators
+                </span>
+              </span>
+            </span>
           </Link>
           <p className="serif text-sm sm:text-base italic text-silver leading-[1.7] mb-7 font-light">
             Elegant hatinators, fascinators, and headwear styled for weddings, celebrations, and every unforgettable entrance.
@@ -25,7 +36,7 @@ export function Footer() {
           <h4 className="text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-offwhite mb-5 sm:mb-6 font-medium border-b border-white/5 pb-2 sm:border-0 sm:pb-0">Information</h4>
           <ul className="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-3">
             {[
-              { name: 'About Us', path: '/about' },
+              { name: 'Our Story', path: '/our-story' },
               { name: 'Reviews', path: '/#testimonials' },
               { name: 'Shipping', path: '/shipping-returns' },
               { name: 'Returns', path: '/shipping-returns' },
@@ -70,7 +81,17 @@ export function Footer() {
       </div>
 
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 mt-12 sm:mt-14 pt-8 pb-4 flex flex-col sm:flex-row justify-between items-center border-t border-white/5 gap-6 sm:gap-0">
-        <span className="text-[10px] sm:text-[11px] text-charcoal tracking-[0.5px] text-center sm:text-left">Copyright 2026 Cee Hatinators. All rights reserved.</span>
+        <div className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left">
+          <span className="text-[10px] sm:text-[11px] text-charcoal tracking-[0.5px]">Copyright 2026 Cee Hatinators. All rights reserved.</span>
+          <a
+            href="https://www.kypextech.co.za"
+            target="_blank"
+            rel="noreferrer"
+            className="footer-credit-glow text-[9px] sm:text-[10px] uppercase tracking-[1.4px] text-mauve no-underline"
+          >
+            Site managed by Kypextech Solutions
+          </a>
+        </div>
         <div className="flex flex-wrap justify-center gap-2 items-center">
           {['Visa', 'MC', 'Amex', 'PayPal', 'Apple Pay'].map((p) => (
             <span key={p} className="px-1.5 py-0.5 border border-white/10 text-[9px] sm:text-[10px] tracking-[1px] text-charcoal uppercase">{p}</span>

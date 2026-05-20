@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   // State 1: Auth still resolving — show spinner
   if (loading) {
@@ -23,7 +24,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // State 2: No authenticated user — redirect cleanly, nothing else rendered
   if (!user) {
-    return <Navigate to="/" replace />;
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
   }
 
   // State 3: Authenticated — render the protected content
