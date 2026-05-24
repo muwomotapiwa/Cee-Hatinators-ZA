@@ -1,9 +1,6 @@
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { OrderService } from '../services/OrderService';
-import { StripeService } from '../services/StripeService';
-import { stripePromise } from '../lib/stripe';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { PaymentService } from '../services/PaymentService';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/Button';
 import { SafeImage } from '../components/SafeImage';
@@ -11,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
-import { Truck, Package, Zap, ShieldCheck, Lock, Tag, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Truck, Package, Zap, ShieldCheck, Lock, Tag, ChevronRight, ArrowLeft, CreditCard } from 'lucide-react';
 import { formatMoney } from '../lib/money';
 import { DEFAULT_DELIVERY_METHODS, DeliveryMethodSetting, useSiteSettings } from '../context/SiteSettingsContext';
 import { AccountService, CustomerAddress } from '../services/AccountService';
@@ -48,7 +45,7 @@ function checkoutCountry(value: string) {
 }
 
 export function CheckoutPage() {
-  const { items, totalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
+  const { items, totalPrice, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
   const { settings } = useSiteSettings();
   const navigate = useNavigate();
@@ -62,11 +59,6 @@ export function CheckoutPage() {
   const [savedAddressMessage, setSavedAddressMessage] = useState('');
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-
-  const stripe = useStripe();
-  const elements = useElements();
-  const isStripeReady = !!stripe && !!elements;
-  const isMockMode = !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
   const deliveryMethods = settings.shipping_summary.methods?.length
     ? settings.shipping_summary.methods
@@ -161,27 +153,15 @@ export function CheckoutPage() {
     setIsSubmitting(true);
     setOrderError('');
     try {
-      // 1. Create order in Firestore (status: pending)
-      await OrderService.createOrder({
-        userId: user.uid,
-        items,
-        total: grandTotal,
+      const session = await PaymentService.createCheckout({
+        provider: 'yoco',
+        items: items.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+        })),
         shippingAddress: data,
-        deliveryMethod: selectedDelivery,
-        deliveryCost,
+        deliveryMethodId: selectedDelivery,
         promoCode: promoApplied ? promoCode : undefined,
-      });
-
-      // 2. Create Stripe checkout session (mock-safe)
-      const session = await StripeService.createCheckoutSession({
-        userId: user.uid,
-        items,
-        shippingAddress: data,
-        deliveryMethod: selectedDelivery,
-        deliveryCost,
-        promoCode: promoApplied ? promoCode : undefined,
-        successUrl: `${window.location.origin}/account`,
-        cancelUrl: `${window.location.origin}/checkout`,
       });
 
       if (session.error) {
@@ -189,22 +169,15 @@ export function CheckoutPage() {
         return;
       }
 
-      // 3. If real backend returns a hosted Checkout URL, leave the app for Stripe.
-      if (!session.isMock) {
-        if (session.checkoutUrl) {
-          window.location.assign(session.checkoutUrl);
-          return;
-        }
-        setOrderError('Checkout session was created, but no checkout URL was returned.');
+      if (session.redirectUrl) {
+        window.location.assign(session.redirectUrl);
         return;
       }
 
-      // 4. Mock mode leaves the order pending; payment status belongs to a backend.
-      clearCart();
-      navigate('/account');
+      setOrderError('Yoco checkout was created, but no payment link was returned.');
     } catch (e) {
       console.error(e);
-      setOrderError('Failed to place order. Please try again.');
+      setOrderError('Failed to start secure payment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -425,48 +398,30 @@ export function CheckoutPage() {
 
                     <div className="border border-silver bg-white p-6 sm:p-8">
                       <div className="flex items-center justify-between mb-6">
-                        <span className="text-[11px] tracking-[2px] uppercase text-dark font-semibold">Card Details</span>
+                        <span className="text-[11px] tracking-[2px] uppercase text-dark font-semibold">Yoco Secure Payment</span>
                         <div className="flex gap-2">
-                          {['Visa', 'MC', 'Amex'].map(b => (
+                          {['Card', '3DS', 'ZAR'].map(b => (
                             <span key={b} className="px-2 py-0.5 border border-silver text-[9px] tracking-[1px] text-mid-gray">{b}</span>
                           ))}
                         </div>
                       </div>
 
-                      {/* Stripe Elements mount (real) or placeholder (mock) */}
-                      {!isMockMode && isStripeReady ? (
-                        <div className="p-3.5 border border-silver bg-white">
-                          <CardElement
-                            options={{
-                              style: {
-                                base: {
-                                  fontSize: '13px',
-                                  color: '#343434',
-                                  fontFamily: '"Josefin Sans", sans-serif',
-                                  '::placeholder': { color: '#8d8788' },
-                                },
-                                invalid: { color: '#5c1120' },
-                              },
-                              hidePostalCode: true,
-                            }}
-                          />
+                      <div className="border border-silver bg-offwhite p-5 flex items-start gap-4">
+                        <div className="w-11 h-11 border border-silver bg-white flex items-center justify-center text-crimson shrink-0">
+                          <CreditCard size={18} />
                         </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="p-3.5 border border-silver bg-offwhite text-[12px] text-mid-gray font-sans">
-                            <span className="opacity-60">**** **** **** ****</span>
-                            <span className="float-right opacity-60">MM / YY &nbsp; CVV</span>
+                        <div>
+                          <div className="text-[12px] tracking-[1.5px] uppercase text-dark font-semibold mb-2">
+                            Redirect to Yoco
                           </div>
-                          <div className="p-3.5 border border-silver bg-offwhite h-12" />
+                          <p className="text-[12px] leading-relaxed text-charcoal">
+                            You will complete payment on Yoco's hosted checkout page. Your order is confirmed only after Yoco sends the verified payment webhook.
+                          </p>
                         </div>
-                      )}
+                      </div>
 
                       <div className="mt-6 p-4 bg-gold/10 border border-gold/30 text-[11px] text-charcoal leading-relaxed">
-                        {isMockMode ? (
-                          <><strong className="text-dark">Test / mock mode.</strong> Add <code className="bg-gold/20 px-1">VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...</code> to <code className="bg-gold/20 px-1">.env.local</code> to enable Stripe Elements. Clicking "Place Order" creates a pending test order without charging a card.</>
-                        ) : (
-                          <><strong className="text-dark">Stripe test mode.</strong> Use card <strong>4242 4242 4242 4242</strong>, any future expiry, and any 3-digit CVC to test a successful payment.</>
-                        )}
+                        <strong className="text-dark">Server checked.</strong> Product prices, delivery, discounts, and payment status are handled by the backend before Yoco receives the checkout request.
                       </div>
 
                       {orderError && (
@@ -484,11 +439,11 @@ export function CheckoutPage() {
 
                   <button
                     type="submit"
-                    disabled={isSubmitting || (!isMockMode && !isStripeReady)}
+                    disabled={isSubmitting}
                     className="w-full bg-crimson text-white py-4 text-[11px] tracking-[2px] uppercase hover:bg-crimson-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
                     <Lock size={14} />
-                    {isSubmitting ? 'Processing...' : `Place Order - ${formatMoney(grandTotal)}`}
+                    {isSubmitting ? 'Opening Yoco...' : `Pay with Yoco - ${formatMoney(grandTotal)}`}
                   </button>
                 </>
               )}
@@ -581,15 +536,6 @@ export function CheckoutPage() {
   );
 }
 
-/**
- * Wrap CheckoutPage in <Elements> so useStripe() / useElements() work.
- * stripePromise is null when VITE_STRIPE_PUBLISHABLE_KEY is not set —
- * @stripe/react-stripe-js handles null gracefully (hooks return null).
- */
 export function CheckoutPageWithStripe() {
-  return (
-    <Elements stripe={stripePromise}>
-      <CheckoutPage />
-    </Elements>
-  );
+  return <CheckoutPage />;
 }
