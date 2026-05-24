@@ -1,5 +1,5 @@
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Heart, LogOut, LucideIcon, MapPin, Package, RotateCcw, Save, Search, Shield, Truck, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
@@ -94,7 +94,9 @@ export function AccountPage() {
   const { user, profile, isSuperUser, signOut, refreshProfile } = useAuth();
   const { productIds, refreshWishlist } = useWishlist();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('orders');
+  const [searchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab') || 'orders';
+  const [activeTab, setActiveTab] = useState(CUSTOMER_TABS.some((tab) => tab.id === requestedTab) ? requestedTab : 'orders');
   const [products, setProducts] = useState<Product[]>([]);
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
@@ -199,6 +201,10 @@ export function AccountPage() {
     });
   }, [selectedProfile?.id]);
 
+  useEffect(() => {
+    if (CUSTOMER_TABS.some((tab) => tab.id === requestedTab)) setActiveTab(requestedTab);
+  }, [requestedTab]);
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
@@ -222,10 +228,20 @@ export function AccountPage() {
     event.preventDefault();
     if (!addressDraft) return;
 
-    await AccountService.saveAddress(addressDraft);
-    setAddressDraft(null);
-    await loadCustomerData();
-    setMessage('Address saved.');
+    const validationMessage = validateAddress(addressDraft);
+    if (validationMessage) {
+      setMessage(validationMessage);
+      return;
+    }
+
+    try {
+      await AccountService.saveAddress(addressDraft);
+      setAddressDraft(null);
+      await loadCustomerData();
+      setMessage('Address saved.');
+    } catch (error) {
+      setMessage(getErrorMessage(error));
+    }
   };
 
   const archiveAddress = async (id?: string) => {
@@ -565,12 +581,12 @@ export function AccountPage() {
             {activeTab === 'addresses' && (
               <>
                 <PanelTitle title="Saved Addresses" />
-                <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] gap-6 items-start">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 self-start">
                     {addresses.map((address) => (
                       <div key={address.id}><AddressCard address={address} onEdit={() => setAddressDraft(address)} onRemove={() => archiveAddress(address.id)} /></div>
                     ))}
-                    <button onClick={() => setAddressDraft(emptyAddress(user.id))} className="border border-dashed border-silver p-5 flex flex-col items-center justify-center gap-2 text-mid-gray hover:border-crimson hover:text-crimson transition-colors min-h-[180px]">
+                    <button onClick={() => setAddressDraft(emptyAddress(user.id))} className="border border-dashed border-silver p-5 flex flex-col items-center justify-center gap-2 text-mid-gray hover:border-crimson hover:text-crimson transition-colors min-h-[150px]">
                       <span className="text-2xl">+</span>
                       <span className="text-[10px] tracking-[1.5px] uppercase">Add Address</span>
                     </button>
@@ -1280,31 +1296,34 @@ function AddressForm({ draft, setDraft, onSubmit, onCancel }: { draft: AddressIn
   const update = (key: keyof AddressInput, value: string | boolean) => setDraft({ ...draft, [key]: value });
 
   return (
-    <form onSubmit={onSubmit} className="bg-white border border-silver p-6 space-y-4">
-      <h3 className="serif text-2xl text-dark">{draft.id ? 'Edit Address' : 'New Address'}</h3>
-      {[
-        ['label', 'Label'],
-        ['full_name', 'Full Name'],
-        ['phone', 'Phone'],
-        ['line1', 'Address Line 1'],
-        ['line2', 'Address Line 2'],
-        ['city', 'City'],
-        ['province', 'Province'],
-        ['postal_code', 'Postal Code'],
-        ['country', 'Country'],
-      ].map(([key, label]) => (
-        <label key={key} className="space-y-2 block">
-          <span className="text-[10px] tracking-[2px] uppercase text-charcoal">{label}</span>
-          <input value={String(draft[key as keyof AddressInput] || '')} onChange={(event) => update(key as keyof AddressInput, event.target.value)} className="w-full border border-silver p-3 text-[13px] outline-none focus:border-crimson" />
+    <form onSubmit={onSubmit} className="bg-white border border-silver p-5 sm:p-6">
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <h3 className="serif text-2xl text-dark">{draft.id ? 'Edit Address' : 'New Address'}</h3>
+          <p className="text-[12px] text-mid-gray mt-1">Saved addresses can be selected during checkout.</p>
+        </div>
+        <button type="button" onClick={onCancel} className="text-[18px] leading-none text-mid-gray hover:text-crimson" aria-label="Close address form">x</button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <AddressInputField label="Label" value={draft.label} onChange={(value) => update('label', value)} />
+        <AddressInputField required label="Full Name" value={draft.full_name} onChange={(value) => update('full_name', value)} />
+        <AddressInputField required label="Phone" value={draft.phone || ''} onChange={(value) => update('phone', value)} />
+        <AddressInputField required label="Address Line 1" value={draft.line1} onChange={(value) => update('line1', value)} />
+        <AddressInputField label="Address Line 2" value={draft.line2 || ''} onChange={(value) => update('line2', value)} />
+        <AddressInputField required label="City / Suburb" value={draft.city} onChange={(value) => update('city', value)} />
+        <AddressInputField required label="Province" value={draft.province || ''} onChange={(value) => update('province', value)} />
+        <AddressInputField required label="Postal Code" value={draft.postal_code || ''} onChange={(value) => update('postal_code', value)} />
+        <AddressInputField required label="Country" value={draft.country} onChange={(value) => update('country', value)} />
+        <label className="flex items-center gap-2 text-[12px] text-charcoal sm:self-end sm:pb-2">
+          <input type="checkbox" checked={draft.is_default} onChange={(event) => update('is_default', event.target.checked)} />
+          Default delivery address
         </label>
-      ))}
-      <label className="flex items-center gap-2 text-[12px] text-charcoal">
-        <input type="checkbox" checked={draft.is_default} onChange={(event) => update('is_default', event.target.checked)} />
-        Default delivery address
-      </label>
-      <div className="flex gap-3">
-        <button className="flex-1 bg-crimson text-white py-3 text-[10px] tracking-[2px] uppercase">Save</button>
-        <button type="button" onClick={onCancel} className="px-5 border border-silver text-[10px] tracking-[2px] uppercase text-charcoal">Cancel</button>
+      </div>
+
+      <div className="flex gap-3 mt-5">
+        <button className="flex-1 bg-crimson text-white py-3 text-[10px] tracking-[2px] uppercase">Save Address</button>
+        <button type="button" onClick={onCancel} className="px-5 border border-silver text-[10px] tracking-[2px] uppercase text-charcoal hover:border-crimson hover:text-crimson">Cancel</button>
       </div>
     </form>
   );

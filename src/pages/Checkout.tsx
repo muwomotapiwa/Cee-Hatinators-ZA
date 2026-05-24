@@ -60,6 +60,8 @@ export function CheckoutPage() {
   const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
   const [orderError, setOrderError] = useState('');
   const [savedAddressMessage, setSavedAddressMessage] = useState('');
+  const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
 
   const stripe = useStripe();
   const elements = useElements();
@@ -95,13 +97,23 @@ export function CheckoutPage() {
     setValue('country', checkoutCountry(address.country || 'South Africa'), { shouldValidate: false });
     if (user?.email) setValue('email', user.email, { shouldValidate: false });
     setSavedAddressMessage(`Using saved address: ${address.label || 'Delivery'}`);
+    setSelectedAddressId(address.id || '');
   };
 
   const loadSavedCheckoutAddress = async () => {
     if (!user?.id) return;
     const customerAddresses = await AccountService.getAddresses(user.id);
-    const address = customerAddresses.find((item) => item.is_default) || customerAddresses[0];
+    setSavedAddresses(customerAddresses);
+    const address = customerAddresses.find((item) => item.id === selectedAddressId)
+      || customerAddresses.find((item) => item.is_default)
+      || customerAddresses[0];
     if (address) applySavedAddress(address);
+  };
+
+  const handleSavedAddressChange = (addressId: string) => {
+    const address = savedAddresses.find((item) => item.id === addressId);
+    if (!address) return;
+    applySavedAddress(address);
   };
 
   useEffect(() => {
@@ -124,7 +136,7 @@ export function CheckoutPage() {
       window.removeEventListener('focus', refresh);
       document.removeEventListener('visibilitychange', refresh);
     };
-  }, [user?.id]);
+  }, [user?.id, selectedAddressId]);
 
   const handlePromo = () => {
     if (promoCode.toUpperCase() === 'CEEHATINATORS10') {
@@ -275,6 +287,30 @@ export function CheckoutPage() {
                     {savedAddressMessage && (
                       <div className="mb-5 border border-silver bg-white px-4 py-3 text-[12px] text-charcoal">
                         {savedAddressMessage}
+                      </div>
+                    )}
+                    {savedAddresses.length > 0 && (
+                      <div className="mb-5 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto] gap-3 items-end">
+                        <label className="space-y-1">
+                          <span className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">Use Saved Address</span>
+                          <select
+                            value={selectedAddressId}
+                            onChange={(event) => handleSavedAddressChange(event.target.value)}
+                            className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors"
+                          >
+                            {savedAddresses.map((address) => (
+                              <option key={address.id} value={address.id}>
+                                {address.label || 'Delivery'} - {address.line1}, {address.city}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <Link
+                          to="/account?tab=addresses"
+                          className="border border-silver bg-white px-4 py-3.5 text-center text-[10px] tracking-[1.5px] uppercase text-charcoal hover:border-crimson hover:text-crimson transition-colors"
+                        >
+                          Manage Addresses
+                        </Link>
                       </div>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
