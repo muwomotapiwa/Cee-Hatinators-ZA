@@ -29,6 +29,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
+  useEffect(() => {
+    const clearLocalCart = () => setItems([]);
+
+    window.addEventListener('cee-clear-local-cart', clearLocalCart);
+    return () => window.removeEventListener('cee-clear-local-cart', clearLocalCart);
+  }, []);
+
   const cartRowsToItems = (rows: CustomerCartItemRow[]): CartItem[] => {
     return rows
       .map((row) => {
@@ -54,8 +61,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .filter((item) => item.quantity > 0);
   };
 
-  const loadRemoteCart = async (userId: string, mergeLocal = false) => {
-    const alreadyLoaded = remoteLoadedForUser.current === userId;
+  const loadRemoteCart = async (userId: string) => {
     const rows = await AccountService.getCartItems(userId);
     const remoteItems = cartRowsToItems(rows);
 
@@ -67,28 +73,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     remoteLoadedForUser.current = userId;
 
-    if (!alreadyLoaded && mergeLocal && items.length > 0) {
-      savingRemote.current = true;
-      await Promise.all(items.map((item) => AccountService.upsertCartItem({
-        userId,
-        productSlug: item.id,
-        quantity: item.quantity,
-        itemSnapshot: item,
-      })));
-      savingRemote.current = false;
-      return;
-    }
-
-    if (alreadyLoaded) setItems([]);
+    setItems([]);
   };
 
   useEffect(() => {
     if (!user) {
       remoteLoadedForUser.current = null;
+      setItems([]);
       return;
     }
 
-    void loadRemoteCart(user.id, true);
+    void loadRemoteCart(user.id);
 
     const refresh = () => {
       if (document.visibilityState === 'visible') void loadRemoteCart(user.id);

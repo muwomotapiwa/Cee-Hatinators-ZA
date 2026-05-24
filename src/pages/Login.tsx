@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { getAuthRedirectUrl } from '../lib/authRedirect';
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -39,6 +40,8 @@ export function LoginPage() {
       const message = (err as { message?: string }).message || '';
       if (message.toLowerCase().includes('invalid login credentials')) {
         setFirebaseError('Incorrect email or password.');
+      } else if (message.toLowerCase().includes('email not confirmed') || message.toLowerCase().includes('confirm')) {
+        setFirebaseError('Please confirm your email address first, then sign in again.');
       } else {
         setFirebaseError('Something went wrong. Please try again.');
       }
@@ -54,7 +57,7 @@ export function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}#${redirectTo}`,
+          redirectTo: getAuthRedirectUrl(redirectTo),
         },
       });
       if (error) throw error;

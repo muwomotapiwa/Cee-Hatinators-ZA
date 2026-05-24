@@ -2,6 +2,7 @@ import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, 
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { auth as firebaseAuth } from '../lib/firebase';
 import { supabase } from '../lib/supabase';
+import { getAuthRedirectUrl } from '../lib/authRedirect';
 
 export type ProfileRole = 'general_user' | 'super_user';
 
@@ -233,10 +234,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: fullName,
           display_name: fullName,
         },
+        emailRedirectTo: getAuthRedirectUrl('/login?verified=1'),
       },
     });
 
     if (error) throw error;
+
+    window.dispatchEvent(new Event('cee-clear-local-cart'));
 
     if (data.user && data.session) {
       await supabase.from('profiles').upsert({

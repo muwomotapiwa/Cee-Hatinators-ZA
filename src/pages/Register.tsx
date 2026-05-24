@@ -6,6 +6,7 @@ import * as z from 'zod';
 import { Eye, EyeOff, Lock, Mail, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { getAuthRedirectUrl } from '../lib/authRedirect';
 
 const registerSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -65,7 +66,7 @@ export function RegisterPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}#${redirectTo}`,
+          redirectTo: getAuthRedirectUrl(redirectTo),
         },
       });
       if (error) throw error;
