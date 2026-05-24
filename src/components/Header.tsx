@@ -1,9 +1,8 @@
+import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { Search, Heart, ShoppingBag, X, LogIn, LogOut, Menu } from 'lucide-react';
 import { useSearch } from '../context/SearchContext';
 import { useAuth } from '../context/AuthContext';
-import { auth } from '../lib/firebase';
-import { signOut } from 'firebase/auth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { BrandMark } from './BrandMark';
 import { SafeImage } from './SafeImage';
@@ -16,15 +15,15 @@ interface HeaderProps {
 export function Header({ onCartToggle, cartCount }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { searchQuery, setSearchQuery } = useSearch();
-  const { user } = useAuth();
+  const { user, isSuperUser, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     if (isSearchOpen) {
-      mobileSearchInputRef.current?.focus();
+      searchInputRef.current?.focus();
     }
   }, [isSearchOpen]);
 
@@ -36,7 +35,10 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
     navigate(`/login?redirect=${encodeURIComponent(redirect)}`);
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const navLinks = [
     { label: 'Shop', to: '/shop' },
@@ -51,6 +53,18 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
 
   const closeSearch = () => {
     setIsSearchOpen(false);
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+
+    if (!query) {
+      navigate('/shop');
+      return;
+    }
+
+    navigate(`/shop?search=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -73,6 +87,11 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
           {navLinks.map(link => (
             <Link key={link.label} to={link.to} className="nav-link">{link.label}</Link>
           ))}
+          {isSuperUser && (
+            <Link to="/portal" className="nav-link text-crimson">
+              Portal
+            </Link>
+          )}
         </nav>
         
         <div className="flex justify-center">
@@ -82,24 +101,9 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
         </div>
         
         <div className="flex gap-2 md:gap-6 items-center justify-end">
-          <div className="relative flex items-center">
-            <div className={`hidden md:flex overflow-hidden transition-all duration-300 items-center absolute right-full ${isSearchOpen ? 'w-48 md:w-64 opacity-100 mr-2' : 'w-0 opacity-0'}`}>
-              <input 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="w-full bg-transparent border-b border-crimson py-1 text-xs outline-none font-sans"
-              />
-              <button 
-                onClick={() => { setIsSearchOpen(false); setSearchQuery(''); }}
-                className="ml-2 text-mid-gray hover:text-crimson"
-              >
-                <X size={14} />
-              </button>
-            </div>
+          <div className="flex items-center">
             <button 
-              className="icon-btn border-none md:border" 
+              className={`icon-btn border-none md:border ${isSearchOpen ? 'border-crimson text-crimson' : ''}`}
               title="Search"
               aria-label="Search"
               onClick={toggleSearch}
@@ -112,11 +116,14 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
           <div className="hidden md:block">
             {user ? (
               <div className="flex items-center gap-4">
-                <Link to="/account" className="flex items-center gap-2 hover:opacity-80 transition-opacity" title="My Account">
+                <Link to="/account" className="flex items-center gap-2 hover:opacity-80 transition-opacity min-w-0" title="My Account">
                   {user.photoURL
                       ? <SafeImage src={user.photoURL} alt={user.displayName || 'Account'} className="w-8 h-8 rounded-full border border-silver object-cover" />
                       : <span className="w-8 h-8 rounded-full bg-crimson text-white flex items-center justify-center text-[12px] font-semibold">{(user.displayName || user.email || 'U')[0].toUpperCase()}</span>
                     }
+                    <span className="hidden xl:block max-w-[120px] truncate text-[10px] tracking-[1.5px] uppercase text-dark">
+                      {user.displayName || user.email}
+                    </span>
                 </Link>
                 <button className="icon-btn" title="Sign Out" onClick={handleLogout}><LogOut size={16} /></button>
               </div>
@@ -137,31 +144,44 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
       </div>
 
       <div
-        className={`md:hidden overflow-hidden border-t border-silver bg-white transition-all duration-300 ${
-          isSearchOpen ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'
+        className={`overflow-hidden border-t border-silver bg-white transition-all duration-300 ${
+          isSearchOpen ? 'max-h-36 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="px-4 py-3">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-10 py-3 md:py-4">
           <div className="flex items-center justify-between gap-3 text-[10px] uppercase tracking-[2px] text-mid-gray">
             <span>Home / Search</span>
             <button
-              className="text-[10px] uppercase tracking-[2px] text-charcoal hover:text-crimson"
-              onClick={closeSearch}
+              type="button"
+              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[2px] text-charcoal hover:text-crimson"
+              onClick={() => {
+                closeSearch();
+                setSearchQuery('');
+              }}
             >
-              Close
+              <X size={13} /> Close
             </button>
           </div>
-          <div className="mt-3 flex items-center gap-3 border border-crimson bg-white px-3 py-3">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="mt-3 flex items-center gap-3 border border-crimson bg-white px-3 py-3 md:px-4"
+          >
             <Search size={16} className="shrink-0 text-crimson" />
             <input
-              ref={mobileSearchInputRef}
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search hats, fascinators, collections..."
               className="min-w-0 flex-1 bg-transparent text-[13px] text-dark outline-none placeholder:text-mid-gray"
             />
-          </div>
+            <button
+              type="submit"
+              className="shrink-0 text-[10px] uppercase tracking-[2px] text-crimson hover:text-dark"
+            >
+              Search
+            </button>
+          </form>
         </div>
       </div>
 
@@ -201,9 +221,14 @@ export function Header({ onCartToggle, cartCount }: HeaderProps) {
                 <span className="text-xs uppercase tracking-widest text-dark">{user.displayName || user.email}</span>
               </div>
               <Link to="/account" className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson" onClick={() => setIsMobileMenuOpen(false)}>My Account</Link>
+              {isSuperUser && (
+                <Link to="/portal" className="text-left text-xs uppercase tracking-[2px] text-crimson font-medium hover:text-dark" onClick={() => setIsMobileMenuOpen(false)}>
+                  Portal
+                </Link>
+              )}
               <button 
                 className="text-left text-xs uppercase tracking-[2px] text-dark font-medium hover:text-crimson"
-                onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                onClick={() => { void handleLogout(); setIsMobileMenuOpen(false); }}
               >
                 Sign Out
               </button>

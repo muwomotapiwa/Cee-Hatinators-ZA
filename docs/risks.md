@@ -203,6 +203,38 @@ Mitigation:
 - Approve data model first.
 - Update TypeScript, services, rules, and tests together in a future sprint.
 
+## Dual Backend Platform Risk
+
+Risk:
+
+- Firebase and Supabase may both exist in the project before a migration plan is approved.
+
+Impact:
+
+- Auth, product data, orders, permissions, and admin workflows could split across two systems and create inconsistent customer or commerce state.
+
+Mitigation:
+
+- Treat Supabase as connected infrastructure only until a backend migration sprint is approved.
+- Do not move products, orders, payments, inventory, discounts, or admin writes to Supabase without approved schema and RLS policies.
+- Keep direct Postgres connection strings, service role keys, and database passwords out of frontend code.
+
+## Split Auth and Commerce Backend Risk
+
+Risk:
+
+- Supabase now owns the browser session while older Firestore product/order scaffolding still exists.
+
+Impact:
+
+- Checkout/order writes can fail or become inconsistent if Firebase Auth assumptions are reused with Supabase users.
+
+Mitigation:
+
+- Treat the current Supabase auth work as storefront identity and portal authorization only.
+- Do not launch checkout/order persistence until the commerce backend boundary is approved and aligned with the chosen auth source.
+- Keep prices, stock, discounts, inventory, and payment status outside browser authority.
+
 ## No Tests Risk
 
 Risk:

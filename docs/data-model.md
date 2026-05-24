@@ -76,7 +76,7 @@ Validation notes:
 Open questions:
 
 - Should all launch products require variants?
-- Are products priced in GBP only at launch?
+- Products are priced in ZAR for the South African launch.
 - Should fabric products be priced per yard, per meter, or fixed cut length?
 
 ## Category

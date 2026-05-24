@@ -22,6 +22,10 @@ import { WishlistPage } from './pages/Wishlist';
 import { LoginPage } from './pages/Login';
 import { RegisterPage } from './pages/Register';
 import { OurStoryPage } from './pages/OurStory';
+import { PortalPage } from './pages/Portal';
+import { PortalOccasionsPage } from './pages/PortalOccasions';
+import { PortalSettingsPage } from './pages/PortalSettings';
+import { PortalDataEditorPage } from './pages/PortalDataEditor';
 
 export default function App() {
   const { items, totalItems } = useCart();
@@ -48,6 +52,10 @@ export default function App() {
             <Route path="/checkout" element={<CheckoutPageWithStripe />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/portal" element={<PortalPage />} />
+            <Route path="/portal/occasions" element={<PortalOccasionsPage />} />
+            <Route path="/portal/settings" element={<PortalSettingsPage />} />
+            <Route path="/portal/:section" element={<PortalDataEditorPage />} />
             <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
             <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             <Route path="*" element={<HomePage />} />

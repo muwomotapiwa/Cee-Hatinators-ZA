@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from './Button';
 import { CartItem } from '../types';
 import { SafeImage } from './SafeImage';
+import { formatMoney } from '../lib/money';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -39,7 +40,7 @@ export function CartDrawer({ isOpen, onClose, items }: CartDrawerProps) {
               <div>
                 <div className="serif text-base text-dark mb-1">{item.name}</div>
                 <div className="text-[11px] color-mid-gray tracking-[1px] mb-2">{item.category} / {item.variant}</div>
-                <div className="text-sm text-crimson font-medium">GBP {item.price.toFixed(2)}</div>
+                <div className="text-sm text-crimson font-medium">{formatMoney(item.price)}</div>
               </div>
             </div>
           ))}
@@ -59,7 +60,7 @@ export function CartDrawer({ isOpen, onClose, items }: CartDrawerProps) {
         <div className="p-6 px-7 border-t border-silver bg-white">
           <div className="flex justify-between mb-5">
             <span className="text-[11px] tracking-[2px] uppercase text-charcoal">Subtotal</span>
-            <span className="serif text-[22px] text-crimson">GBP {subtotal.toFixed(2)}</span>
+            <span className="serif text-[22px] text-crimson">{formatMoney(subtotal)}</span>
           </div>
           <Link to="/checkout" onClick={onClose} className="block">
             <button className="w-full p-[18px] bg-crimson-dark text-white border-none font-sans text-[11px] tracking-[3px] uppercase cursor-pointer transition-colors duration-200 font-semibold hover:bg-crimson">

@@ -6,10 +6,13 @@ import { useSearch } from '../context/SearchContext';
 import { useProductModal } from '../context/ProductModalContext';
 import { ProductService } from '../services/ProductService';
 import { useLocation } from 'react-router-dom';
-
-const OCCASION_TYPES = ['Wedding', 'Church', 'Race Day', 'Formal Event', 'Evening'];
+import { SupabaseCatalogService, CategoryTileRecord, OccasionOption } from '../services/SupabaseCatalogService';
 
 function productMatchesOccasion(product: Product, occasionType: string) {
+  if (product.occasions) {
+    return product.occasions.some((occasion) => occasion.toLowerCase() === occasionType.toLowerCase());
+  }
+
   const searchableText = `${product.name} ${product.variant} ${product.category}`.toLowerCase();
 
   if (occasionType === 'Formal Event') {
@@ -25,32 +28,46 @@ function productMatchesOccasion(product: Product, occasionType: string) {
 
 export function ShopPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryTileRecord[]>([]);
+  const [occasions, setOccasions] = useState<OccasionOption[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
-  const { searchQuery } = useSearch();
+  const { searchQuery, setSearchQuery } = useSearch();
   const { openProductModal } = useProductModal();
 
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const initialCategory = queryParams.get('category') || 'All';
-
+  const initialCollection = queryParams.get('collection') || '';
   const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const [activeCollection, setActiveCollection] = useState(initialCollection);
   const [selectedOccasionTypes, setSelectedOccasionTypes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('newest');
 
-  const categories = ['All', 'Hatinators', 'Fascinators', 'Church Hats', 'Bonnets', 'Accessories'];
+  const categoryFilters = ['All', ...categories.map((category) => category.name)];
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    ProductService.getProducts().then(data => {
-      setProducts(data);
+    Promise.all([
+      ProductService.getProducts(),
+      SupabaseCatalogService.getCategories(),
+      SupabaseCatalogService.getOccasions(),
+    ]).then(([productData, categoryData, occasionData]) => {
+      setProducts(productData);
+      setCategories(categoryData);
+      setOccasions(occasionData);
       setLoading(false);
     });
   }, []);
 
   useEffect(() => {
-    const category = new URLSearchParams(location.search).get('category') || 'All';
+    const currentParams = new URLSearchParams(location.search);
+    const category = currentParams.get('category') || 'All';
+    const collection = currentParams.get('collection') || '';
+    const search = currentParams.get('search') || '';
     setActiveCategory(category);
+    setActiveCollection(collection);
+    setSearchQuery(search);
   }, [location.search]);
 
   const handleCategoryChange = (category: string) => {
@@ -68,11 +85,20 @@ export function ShopPage() {
 
   let filteredProducts = products.filter(p => {
     const matchesCategory = activeCategory === 'All' || p.category.toLowerCase() === activeCategory.toLowerCase();
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         p.variant.toLowerCase().includes(searchQuery.toLowerCase());
+    const hasCollectionAssignments = products.some((product) => (product.collectionSlugs || []).length > 0);
+    const matchesCollection = !activeCollection ||
+      !hasCollectionAssignments ||
+      (p.collectionSlugs || []).some((slug) => slug.toLowerCase() === activeCollection.toLowerCase());
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const matchesSearch = !normalizedSearch ||
+      p.name.toLowerCase().includes(normalizedSearch) ||
+      p.variant.toLowerCase().includes(normalizedSearch) ||
+      p.category.toLowerCase().includes(normalizedSearch) ||
+      (p.collectionSlugs || []).some((slug) => slug.toLowerCase().includes(normalizedSearch)) ||
+      (p.description || '').toLowerCase().includes(normalizedSearch);
     const matchesOccasionType = selectedOccasionTypes.length === 0 ||
       selectedOccasionTypes.some(type => productMatchesOccasion(p, type));
-    return matchesCategory && matchesSearch && matchesOccasionType;
+    return matchesCategory && matchesCollection && matchesSearch && matchesOccasionType;
   });
 
   if (sortBy === 'price-low') {
@@ -87,10 +113,20 @@ export function ShopPage() {
         <div className="mb-10 sm:mb-14 text-center sm:text-left flex flex-col sm:flex-row justify-between items-end gap-6">
           <div>
             <h1 className="serif text-[clamp(32px,5vw,56px)] font-light text-dark leading-[1.1] mb-2 sm:mb-4">
-              Shop <em className="italic text-crimson">Cee Hatinators</em>
+              {searchQuery.trim() ? (
+                <>
+                  Search <em className="italic text-crimson">Results</em>
+                </>
+              ) : (
+                <>
+                  Shop <em className="italic text-crimson">Cee Hatinators</em>
+                </>
+              )}
             </h1>
             <p className="text-[12px] sm:text-[13px] tracking-[1px] text-charcoal max-w-lg font-light">
-              Explore elegant hatinators, fascinators, bonnets, and finishing accessories for memorable occasions.
+              {searchQuery.trim()
+                ? `Showing pieces that match "${searchQuery.trim()}".`
+                : 'Explore elegant hatinators, fascinators, veilings, and finishing accessories for memorable occasions.'}
             </p>
           </div>
 
@@ -116,7 +152,7 @@ export function ShopPage() {
             <div className="sticky top-28">
               <h3 className="text-[11px] tracking-[2px] uppercase text-dark mb-5 font-semibold border-b border-silver pb-3">Categories</h3>
               <ul className="flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 scrollbar-hide">
-                {categories.map(cat => (
+                {categoryFilters.map(cat => (
                   <li key={cat} className="shrink-0">
                     <button
                       onClick={() => handleCategoryChange(cat)}
@@ -133,16 +169,16 @@ export function ShopPage() {
               <div className="hidden lg:block mt-10">
                 <h3 className="text-[11px] tracking-[2px] uppercase text-dark mb-5 font-semibold border-b border-silver pb-3">Occasion</h3>
                 <ul className="flex flex-col gap-3">
-                  {OCCASION_TYPES.map(type => (
-                    <li key={type}>
+                  {occasions.map((occasion) => (
+                    <li key={occasion.id}>
                       <label className="flex items-center gap-3 cursor-pointer group">
                         <input
                           type="checkbox"
-                          checked={selectedOccasionTypes.includes(type)}
-                          onChange={() => toggleOccasionType(type)}
+                          checked={selectedOccasionTypes.includes(occasion.name)}
+                          onChange={() => toggleOccasionType(occasion.name)}
                           className="w-3.5 h-3.5 accent-crimson cursor-pointer"
                         />
-                        <span className="text-[12px] tracking-[1px] text-charcoal group-hover:text-crimson transition-colors">{type}</span>
+                        <span className="text-[12px] tracking-[1px] text-charcoal group-hover:text-crimson transition-colors">{occasion.name}</span>
                       </label>
                     </li>
                   ))}

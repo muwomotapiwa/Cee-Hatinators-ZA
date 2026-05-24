@@ -4,6 +4,8 @@ import { Product } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { ProductColorImage } from './ProductColorImage';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
+import { formatMoney } from '../lib/money';
 
 interface ProductCardProps {
   product: Product;
@@ -14,7 +16,9 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, onClick }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const [selectedColor, setSelectedColor] = React.useState(product.colors[0] || '');
+  const saved = isWishlisted(product.id);
   const badgeColors = {
     sale: 'bg-gold text-crimson-dark',
     dark: 'bg-dark text-white',
@@ -25,9 +29,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, o
     setSelectedColor(product.colors[0] || '');
   }, [product.id, product.colors]);
 
-  const handleWishlistClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleWishlistClick = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    navigate(user ? '/wishlist' : '/login?redirect=/wishlist');
+    if (!user) {
+      navigate('/login?redirect=/wishlist');
+      return;
+    }
+
+    await toggleWishlist(product.id);
   };
 
   return (
@@ -50,12 +59,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, o
         <div className="absolute bottom-3 right-3 flex flex-col gap-1.5 opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
           <button
             type="button"
-            className="w-9 h-9 bg-white border-0 flex items-center justify-center cursor-pointer text-dark transition-all duration-200 hover:bg-crimson hover:text-white"
-            title="Wishlist"
-            aria-label={`View wishlist for ${product.name}`}
+            className={`w-9 h-9 bg-white border-0 flex items-center justify-center cursor-pointer transition-all duration-200 hover:bg-crimson hover:text-white ${
+              saved ? 'text-crimson' : 'text-dark'
+            }`}
+            title={saved ? 'Remove from wishlist' : 'Add to wishlist'}
+            aria-label={`${saved ? 'Remove' : 'Add'} ${product.name} ${saved ? 'from' : 'to'} wishlist`}
             onClick={handleWishlistClick}
           >
-            <Heart size={14} />
+            <Heart size={14} className={saved ? 'fill-current' : ''} />
           </button>
           <button
             className="w-9 h-9 bg-white border-0 flex items-center justify-center cursor-pointer text-dark transition-all duration-200 hover:bg-crimson hover:text-white"
@@ -84,9 +95,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onQuickAdd, o
       <p className="text-[10px] tracking-[1.5px] text-mid-gray uppercase mb-2.5">{product.variant}</p>
 
       <div className="flex items-center gap-2.5">
-        <span className="text-[15px] font-medium text-crimson tracking-[0.5px]">GBP {product.price.toFixed(2)}</span>
+        <span className="text-[15px] font-medium text-crimson tracking-[0.5px]">{formatMoney(product.price)}</span>
         {product.oldPrice && (
-          <span className="text-[13px] text-silver line-through">GBP {product.oldPrice.toFixed(2)}</span>
+          <span className="text-[13px] text-silver line-through">{formatMoney(product.oldPrice)}</span>
         )}
       </div>
 

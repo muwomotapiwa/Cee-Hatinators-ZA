@@ -55,7 +55,7 @@ Output shape:
   "shippingMinor": 0,
   "taxMinor": 0,
   "totalMinor": 0,
-  "currency": "GBP",
+  "currency": "ZAR",
   "warnings": []
 }
 ```
@@ -465,4 +465,3 @@ Risks:
 Open questions:
 
 - Which order status transitions should admins be allowed to perform?
-

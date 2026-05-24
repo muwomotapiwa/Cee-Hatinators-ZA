@@ -3,12 +3,16 @@ import { db } from '../lib/firebase';
 import { Product, CartItem } from '../types';
 import { OperationType, handleFirestoreError } from '../context/AuthContext';
 import { MOCK_PRODUCTS } from '../lib/mockData';
+import { SupabaseCatalogService } from './SupabaseCatalogService';
 
 const PRODUCTS_COLLECTION = 'products';
 const ORDERS_COLLECTION = 'orders';
 
 export const ProductService = {
   async getProducts(): Promise<Product[]> {
+    const supabaseProducts = await SupabaseCatalogService.getProducts();
+    if (supabaseProducts.length > 0) return supabaseProducts;
+
     try {
       const querySnapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
       const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));

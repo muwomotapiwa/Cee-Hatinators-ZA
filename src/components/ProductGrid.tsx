@@ -7,20 +7,35 @@ import { useSearch } from '../context/SearchContext';
 import { useProductModal } from '../context/ProductModalContext';
 import { ProductService } from '../services/ProductService';
 import { useNavigate } from 'react-router-dom';
+import { SupabaseCatalogService, CategoryTileRecord } from '../services/SupabaseCatalogService';
+import { useContentBlock } from '../hooks/useContentBlock';
 
 export function ProductGrid() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryTileRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
   const { searchQuery } = useSearch();
   const { openProductModal } = useProductModal();
   const navigate = useNavigate();
-  const filters = ['All', 'Hatinators', 'Fascinators', 'Church Hats', 'Bonnets', 'Accessories'];
+  const content = useContentBlock('home', 'products_heading', {
+    title: 'New Headwear',
+    subtitle: 'Cee Selection',
+    body: '',
+    media_url: null,
+    button_label: null,
+    button_url: null,
+  });
+  const filters = ['All', ...categories.map((category) => category.name)];
 
   useEffect(() => {
-    ProductService.getProducts().then(data => {
-      setProducts(data);
+    Promise.all([
+      ProductService.getProducts(),
+      SupabaseCatalogService.getCategories(),
+    ]).then(([productData, categoryData]) => {
+      setProducts(productData);
+      setCategories(categoryData);
       setLoading(false);
     });
   }, []);
@@ -44,9 +59,9 @@ export function ProductGrid() {
     <section id="products" className="py-12 sm:py-20 bg-white">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10">
         <div className="text-center mb-8 sm:mb-12">
-          <span className="text-[9px] sm:text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-crimson mb-2 sm:mb-3 block">Cee Selection</span>
+          <span className="text-[9px] sm:text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-crimson mb-2 sm:mb-3 block">{content.subtitle}</span>
           <h2 className="serif text-[clamp(28px,4vw,52px)] font-light text-dark leading-[1.1]">
-            New <em className="italic text-crimson">Headwear</em>
+            {content.title}
           </h2>
           <div className="w-10 sm:w-12 h-px bg-crimson mx-auto mt-4 sm:mt-5"></div>
         </div>

@@ -10,8 +10,11 @@ import { SafeImage } from '../components/SafeImage';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Truck, Package, Zap, ShieldCheck, Lock, Tag, ChevronRight, ArrowLeft } from 'lucide-react';
+import { formatMoney } from '../lib/money';
+import { DEFAULT_DELIVERY_METHODS, DeliveryMethodSetting, useSiteSettings } from '../context/SiteSettingsContext';
+import { AccountService, CustomerAddress } from '../services/AccountService';
 
 const checkoutSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -19,22 +22,35 @@ const checkoutSchema = z.object({
   lastName: z.string().min(2, 'Last name is too short'),
   address: z.string().min(5, 'Address is too short'),
   city: z.string().min(2, 'City is too short'),
-  state: z.string().min(2, 'State / County is too short'),
-  zip: z.string().min(4, 'ZIP / Postcode is too short'),
+  state: z.string().min(2, 'Province is too short'),
+  zip: z.string().min(4, 'Postal code is too short'),
   country: z.string().min(2, 'Country is too short'),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-const DELIVERY_METHODS = [
-  { id: 'standard', label: 'Standard Shipping', desc: '5-7 business days', price: 4.45, icon: Truck },
-  { id: 'express', label: 'Express Shipping', desc: '2-3 business days', price: 9.95, icon: Zap },
-  { id: 'next-day', label: 'Next Day Delivery', desc: 'Order before 12pm', price: 14.99, icon: Package },
-];
+function getDeliveryIcon(method: DeliveryMethodSetting) {
+  if (method.id === 'express' || method.label.toLowerCase().includes('express')) return Zap;
+  if (method.id === 'collection' || method.label.toLowerCase().includes('collection')) return Package;
+  return Truck;
+}
+
+function splitFullName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' ') || parts[0] || '',
+  };
+}
+
+function checkoutCountry(value: string) {
+  return value.toLowerCase().includes('south africa') || value.toUpperCase() === 'ZA' ? 'ZA' : value;
+}
 
 export function CheckoutPage() {
   const { items, totalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
+  const { settings } = useSiteSettings();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promoCode, setPromoCode] = useState('');
@@ -43,24 +59,72 @@ export function CheckoutPage() {
   const [selectedDelivery, setSelectedDelivery] = useState('standard');
   const [step, setStep] = useState<'shipping' | 'payment'>('shipping');
   const [orderError, setOrderError] = useState('');
+  const [savedAddressMessage, setSavedAddressMessage] = useState('');
 
   const stripe = useStripe();
   const elements = useElements();
   const isStripeReady = !!stripe && !!elements;
   const isMockMode = !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
-  const deliveryCost = DELIVERY_METHODS.find(d => d.id === selectedDelivery)?.price ?? 4.45;
+  const deliveryMethods = settings.shipping_summary.methods?.length
+    ? settings.shipping_summary.methods
+    : DEFAULT_DELIVERY_METHODS;
+  const selectedDeliveryMethod = deliveryMethods.find((method) => method.id === selectedDelivery) || deliveryMethods[0];
+  const deliveryCost = selectedDeliveryMethod?.price ?? 0;
   const discount = promoApplied ? totalPrice * 0.1 : 0;
   const grandTotal = totalPrice + deliveryCost - discount;
 
-  const { register, handleSubmit, formState: { errors }, trigger, getValues } = useForm<CheckoutFormData>({
+  const { register, handleSubmit, formState: { errors }, trigger, getValues, setValue } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: user ? {
       email: user.email || '',
       firstName: user.displayName?.split(' ')[0] || '',
       lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+      country: 'ZA',
     } : {}
   });
+
+  const applySavedAddress = (address: CustomerAddress) => {
+    const name = splitFullName(address.full_name || user?.displayName || '');
+    setValue('firstName', name.firstName, { shouldValidate: false });
+    setValue('lastName', name.lastName, { shouldValidate: false });
+    setValue('address', [address.line1, address.line2].filter(Boolean).join(', '), { shouldValidate: false });
+    setValue('city', address.city, { shouldValidate: false });
+    setValue('state', address.province || '', { shouldValidate: false });
+    setValue('zip', address.postal_code || '', { shouldValidate: false });
+    setValue('country', checkoutCountry(address.country || 'South Africa'), { shouldValidate: false });
+    if (user?.email) setValue('email', user.email, { shouldValidate: false });
+    setSavedAddressMessage(`Using saved address: ${address.label || 'Delivery'}`);
+  };
+
+  const loadSavedCheckoutAddress = async () => {
+    if (!user?.id) return;
+    const customerAddresses = await AccountService.getAddresses(user.id);
+    const address = customerAddresses.find((item) => item.is_default) || customerAddresses[0];
+    if (address) applySavedAddress(address);
+  };
+
+  useEffect(() => {
+    if (!deliveryMethods.some((method) => method.id === selectedDelivery)) {
+      setSelectedDelivery(deliveryMethods[0]?.id || 'standard');
+    }
+  }, [deliveryMethods, selectedDelivery]);
+
+  useEffect(() => {
+    void loadSavedCheckoutAddress();
+
+    const refresh = () => {
+      if (document.visibilityState === 'visible') void loadSavedCheckoutAddress();
+    };
+
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [user?.id]);
 
   const handlePromo = () => {
     if (promoCode.toUpperCase() === 'CEEHATINATORS10') {
@@ -208,6 +272,11 @@ export function CheckoutPage() {
                       <span className="w-5 h-5 bg-crimson text-white flex items-center justify-center text-[9px]">2</span>
                       Shipping Address
                     </h3>
+                    {savedAddressMessage && (
+                      <div className="mb-5 border border-silver bg-white px-4 py-3 text-[12px] text-charcoal">
+                        {savedAddressMessage}
+                      </div>
+                    )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                       {[
                         { name: 'firstName', label: 'First Name', placeholder: 'Jane' },
@@ -235,30 +304,24 @@ export function CheckoutPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
                           <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">City</label>
-                          <input {...register('city')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="London" />
+                          <input {...register('city')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="Johannesburg" />
                           {errors.city && <p className="text-[10px] text-red-500 mt-1">{errors.city.message}</p>}
                         </div>
                         <div className="space-y-1">
-                          <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">State / County</label>
-                          <input {...register('state')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="Greater London" />
+                          <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">Province</label>
+                          <input {...register('state')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="Gauteng" />
                           {errors.state && <p className="text-[10px] text-red-500 mt-1">{errors.state.message}</p>}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">Postcode</label>
-                          <input {...register('zip')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="SW1A 1AA" />
+                          <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">Postal Code</label>
+                          <input {...register('zip')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors" placeholder="2000" />
                           {errors.zip && <p className="text-[10px] text-red-500 mt-1">{errors.zip.message}</p>}
                         </div>
                         <div className="space-y-1">
                           <label className="text-[10px] tracking-[1.5px] uppercase text-charcoal font-medium">Country</label>
                           <select {...register('country')} className="w-full p-3.5 border border-silver bg-white font-sans text-[13px] outline-none focus:border-crimson transition-colors">
-                            <option value="">Select...</option>
-                            <option value="GB">United Kingdom</option>
-                            <option value="US">United States</option>
-                            <option value="EU">European Union</option>
-                            <option value="NG">Nigeria</option>
-                            <option value="GH">Ghana</option>
                             <option value="ZA">South Africa</option>
                           </select>
                           {errors.country && <p className="text-[10px] text-red-500 mt-1">{errors.country.message}</p>}
@@ -274,8 +337,8 @@ export function CheckoutPage() {
                       Delivery Method
                     </h3>
                     <div className="space-y-3">
-                      {DELIVERY_METHODS.map(method => {
-                        const Icon = method.icon;
+                      {deliveryMethods.map(method => {
+                        const Icon = getDeliveryIcon(method);
                         return (
                           <label
                             key={method.id}
@@ -292,9 +355,9 @@ export function CheckoutPage() {
                             <Icon size={18} className={selectedDelivery === method.id ? 'text-crimson' : 'text-mid-gray'} />
                             <div className="flex-1">
                               <div className="text-[12px] tracking-[1px] uppercase font-semibold text-dark">{method.label}</div>
-                              <div className="text-[11px] text-mid-gray">{method.desc}</div>
+                              <div className="text-[11px] text-mid-gray">{method.description}</div>
                             </div>
-                            <div className="text-[13px] font-medium text-dark">GBP {method.price.toFixed(2)}</div>
+                            <div className="text-[13px] font-medium text-dark">{formatMoney(method.price)}</div>
                           </label>
                         );
                       })}
@@ -389,7 +452,7 @@ export function CheckoutPage() {
                     className="w-full bg-crimson text-white py-4 text-[11px] tracking-[2px] uppercase hover:bg-crimson-dark transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                   >
                     <Lock size={14} />
-                    {isSubmitting ? 'Processing...' : `Place Order - GBP ${grandTotal.toFixed(2)}`}
+                    {isSubmitting ? 'Processing...' : `Place Order - ${formatMoney(grandTotal)}`}
                   </button>
                 </>
               )}
@@ -422,7 +485,7 @@ export function CheckoutPage() {
                       </div>
                     </div>
                     <div className="text-[13px] font-medium text-dark shrink-0">
-                      GBP {(item.price * item.quantity).toFixed(2)}
+                      {formatMoney(item.price * item.quantity)}
                     </div>
                   </div>
                 ))}
@@ -456,21 +519,21 @@ export function CheckoutPage() {
               <div className="space-y-3 border-t border-silver pt-5">
                 <div className="flex justify-between text-[13px] text-charcoal">
                   <span>Subtotal</span>
-                  <span>GBP {totalPrice.toFixed(2)}</span>
+                  <span>{formatMoney(totalPrice)}</span>
                 </div>
                 {promoApplied && (
                   <div className="flex justify-between text-[13px] text-green-600">
                     <span>Discount (10%)</span>
-                    <span>-GBP {discount.toFixed(2)}</span>
+                    <span>-{formatMoney(discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-[13px] text-charcoal">
                   <span>Shipping</span>
-                  <span>GBP {deliveryCost.toFixed(2)}</span>
+                  <span>{formatMoney(deliveryCost)}</span>
                 </div>
                 <div className="flex justify-between pt-4 border-t border-silver">
                   <span className="text-[11px] tracking-[2px] uppercase font-semibold text-dark">Total</span>
-                  <span className="serif text-2xl text-crimson font-light">GBP {grandTotal.toFixed(2)}</span>
+                  <span className="serif text-2xl text-crimson font-light">{formatMoney(grandTotal)}</span>
                 </div>
               </div>
             </div>

@@ -3,11 +3,13 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 import { ProductService } from '../services/ProductService';
 import { Button } from '../components/Button';
 import { ProductCard } from '../components/ProductCard';
 import { ProductColorImage } from '../components/ProductColorImage';
 import { ChevronRight, Heart, Share2, Ruler, Truck, ShieldCheck, Plus, Minus } from 'lucide-react';
+import { formatMoney } from '../lib/money';
 
 export function ProductDetailPage() {
   const { slug } = useParams();
@@ -17,8 +19,10 @@ export function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState('');
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +34,7 @@ export function ProductDetailPage() {
       setProduct(found);
       setRelatedProducts(products.filter(p => p.id !== found.id && p.category === found.category));
       if (found.colors && found.colors.length > 0) setSelectedColor(found.colors[0]);
+      setSelectedImage(found.image);
       if (found.sizes && found.sizes.length > 0) setSelectedSize(found.sizes[0]);
       setLoading(false);
     });
@@ -47,9 +52,17 @@ export function ProductDetailPage() {
     // Optionally open cart here
   };
 
-  const handleWishlistClick = () => {
-    navigate(user ? '/wishlist' : '/login?redirect=/wishlist');
+  const saved = isWishlisted(product.id);
+
+  const handleWishlistClick = async () => {
+    if (!user) {
+      navigate('/login?redirect=/wishlist');
+      return;
+    }
+
+    await toggleWishlist(product.id);
   };
+  const thumbnailImages = (product.galleryImages || []).slice(0, 4);
 
   return (
     <div className="bg-offwhite min-h-screen">
@@ -82,7 +95,7 @@ export function ProductDetailPage() {
                 </div>
               )}
               <ProductColorImage
-                src={product.image} 
+                src={selectedImage || product.image}
                 alt={product.name}
                 color={selectedColor}
                 className="w-full h-full"
@@ -90,14 +103,23 @@ export function ProductDetailPage() {
               />
             </div>
             {/* Thumbnail Gallery */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="aspect-square bg-white overflow-hidden cursor-pointer border border-crimson">
-                <ProductColorImage src={product.image} className="w-full h-full" imageClassName="object-cover" color={selectedColor} alt="Thumb" />
+            {thumbnailImages.length > 0 && (
+              <div className="grid grid-cols-4 gap-4">
+                {thumbnailImages.map((imageUrl, index) => (
+                  <button
+                    key={`${imageUrl}-${index}`}
+                    type="button"
+                    onClick={() => setSelectedImage(imageUrl)}
+                    className={`aspect-square bg-white overflow-hidden cursor-pointer transition-all ${
+                      selectedImage === imageUrl ? 'border border-crimson' : 'border border-transparent hover:border-silver opacity-70 hover:opacity-100'
+                    }`}
+                    aria-label={`View ${product.name} angle ${index + 1}`}
+                  >
+                    <ProductColorImage src={imageUrl} className="w-full h-full" imageClassName="object-cover" color={selectedColor} alt={`${product.name} angle ${index + 1}`} />
+                  </button>
+                ))}
               </div>
-              <div className="aspect-square bg-white overflow-hidden cursor-pointer border border-transparent hover:border-silver opacity-70 hover:opacity-100 transition-all">
-                <ProductColorImage src={product.image} className="w-full h-full" imageClassName="object-cover" color={selectedColor} alt="Thumb" />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Product Details */}
@@ -108,9 +130,9 @@ export function ProductDetailPage() {
                 {product.name}
               </h1>
               <div className="flex items-baseline gap-4">
-                <span className="text-xl sm:text-2xl font-light text-dark">GBP {product.price.toFixed(2)}</span>
+                <span className="text-xl sm:text-2xl font-light text-dark">{formatMoney(product.price)}</span>
                 {product.oldPrice && (
-                  <span className="text-sm text-mid-gray line-through">GBP {product.oldPrice.toFixed(2)}</span>
+                  <span className="text-sm text-mid-gray line-through">{formatMoney(product.oldPrice)}</span>
                 )}
               </div>
             </div>
@@ -170,17 +192,24 @@ export function ProductDetailPage() {
                 <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-full flex justify-center items-center text-charcoal hover:text-crimson"><Plus size={14} /></button>
               </div>
               <Button onClick={handleAddToCart} variant="primary" className="h-12 flex-1">
-                Add to Bag - GBP {(product.price * quantity).toFixed(2)}
+                Add to Bag - {formatMoney(product.price * quantity)}
               </Button>
               <button
                 type="button"
-                className="h-12 w-12 shrink-0 border border-silver flex items-center justify-center text-charcoal hover:border-crimson hover:text-crimson transition-colors"
-                title="Wishlist"
-                aria-label={`View wishlist for ${product.name}`}
+                className={`h-12 w-12 shrink-0 border border-silver flex items-center justify-center hover:border-crimson hover:text-crimson transition-colors ${
+                  saved ? 'text-crimson' : 'text-charcoal'
+                }`}
+                title={saved ? 'Remove from wishlist' : 'Add to wishlist'}
+                aria-label={`${saved ? 'Remove' : 'Add'} ${product.name} ${saved ? 'from' : 'to'} wishlist`}
                 onClick={handleWishlistClick}
               >
-                <Heart size={18} />
+                <Heart size={18} className={saved ? 'fill-current' : ''} />
               </button>
+            </div>
+
+            <div className="mb-10 p-5 bg-[#f4eef5] text-[12px] text-charcoal tracking-[0.5px] leading-[1.9]">
+              <strong className="text-crimson text-[10px] tracking-[2px] uppercase block mb-2">Styling Note</strong>
+              {product.stylingNote || 'Pair purple-led pieces with blush, champagne, ivory, soft metallics, or deep plum for a polished finish.'}
             </div>
 
             {/* Trust Badges */}

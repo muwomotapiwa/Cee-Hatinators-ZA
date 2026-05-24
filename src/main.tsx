@@ -6,15 +6,21 @@ import { CartProvider } from './context/CartContext';
 import { SearchProvider } from './context/SearchContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProductModalProvider } from './context/ProductModalContext';
+import { SiteSettingsProvider } from './context/SiteSettingsContext';
+import { WishlistProvider } from './context/WishlistContext';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
       <SearchProvider>
         <CartProvider>
-          <ProductModalProvider>
-            <App />
-          </ProductModalProvider>
+          <WishlistProvider>
+            <ProductModalProvider>
+              <SiteSettingsProvider>
+                <App />
+              </SiteSettingsProvider>
+            </ProductModalProvider>
+          </WishlistProvider>
         </CartProvider>
       </SearchProvider>
     </AuthProvider>

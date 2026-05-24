@@ -13,10 +13,10 @@ const SHOP_CATEGORY_BY_TILE: Record<string, string> = {
   'Pillbox': 'Fascinators',
   'Beret': 'Fascinators',
   'Turban': 'Hatinators',
-  'Calotte / Skull Cap': 'Bonnets',
+  'Calotte / Skull Cap': 'Veilings',
   'Fez / Tarboosh': 'Church Hats',
   'Toque': 'Church Hats',
-  'Hood / Cone': 'Bonnets',
+  'Hood / Cone': 'Veilings',
   'Fascinator': 'Fascinators',
   'Percher': 'Fascinators',
   'Cocktail Hat': 'Fascinators',
@@ -27,11 +27,15 @@ const SHOP_CATEGORY_BY_TILE: Record<string, string> = {
   'Visor': 'Accessories',
   'Newsboy / Gatsby': 'Church Hats',
   'Ascot / Flat Cap': 'Church Hats',
-  'Bonnet': 'Bonnets',
+  'Bonnet': 'Veilings',
   'Bucket Hat': 'Accessories',
 };
 
+export function getShopCategoryForCategoryTile(categoryName: string) {
+  return SHOP_CATEGORY_BY_TILE[categoryName] || 'Hatinators';
+}
+
 export function getShopPathForCategoryTile(categoryName: string) {
-  const shopCategory = SHOP_CATEGORY_BY_TILE[categoryName] || 'Hatinators';
+  const shopCategory = getShopCategoryForCategoryTile(categoryName);
   return `/shop?category=${encodeURIComponent(shopCategory)}`;
 }

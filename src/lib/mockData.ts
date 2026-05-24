@@ -44,6 +44,7 @@ export const MOCK_PRODUCTS: Product[] = [
     badge: 'New',
     colors: ['#4f0254', '#4d0353', '#dcdc44'],
     category: 'Hatinators',
+    stylingNote: 'Pair purple-led pieces with blush, champagne, ivory, soft metallics, or deep plum for a polished finish.',
   },
   {
     id: '2',
@@ -56,6 +57,7 @@ export const MOCK_PRODUCTS: Product[] = [
     badgeVariant: 'sale',
     colors: ['#351e49', '#e01386', '#b3899e'],
     category: 'Fascinators',
+    stylingNote: 'Style with soft metallics, ivory, champagne, or deep plum to echo the feather detail.',
   },
   {
     id: '3',
@@ -64,7 +66,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: 12.5,
     image: IMAGES[8],
     colors: ['#4f0254', '#351e49', '#e01386', '#b3899e'],
-    category: 'Bonnets',
+    category: 'Veilings',
+    stylingNote: 'Use with evening wraps, satin textures, or tonal accessories for a gentle finished look.',
   },
   {
     id: '4',
@@ -76,5 +79,6 @@ export const MOCK_PRODUCTS: Product[] = [
     badgeVariant: 'dark',
     colors: ['#4d0353', '#4f0254', '#f9fc04'],
     category: 'Church Hats',
+    stylingNote: 'Balance the wide brim with simple jewellery, a clean neckline, and a coordinated clutch.',
   },
 ];

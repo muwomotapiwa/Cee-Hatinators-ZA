@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -18,6 +18,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/account';
+  const { signInWithPassword } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [firebaseError, setFirebaseError] = useState('');
@@ -32,14 +33,12 @@ export function LoginPage() {
     setIsSubmitting(true);
     setFirebaseError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithPassword(email, password);
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
-      if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+      const message = (err as { message?: string }).message || '';
+      if (message.toLowerCase().includes('invalid login credentials')) {
         setFirebaseError('Incorrect email or password.');
-      } else if (code === 'auth/too-many-requests') {
-        setFirebaseError('Too many attempts. Please try again later.');
       } else {
         setFirebaseError('Something went wrong. Please try again.');
       }
@@ -52,12 +51,19 @@ export function LoginPage() {
     setIsGoogleLoading(true);
     setFirebaseError('');
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      navigate(redirectTo, { replace: true });
-    } catch {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}${window.location.pathname}#${redirectTo}`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      console.error(err);
       setFirebaseError('Google sign-in failed. Please try again.');
-    } finally {
       setIsGoogleLoading(false);
+    } finally {
+      if (document.visibilityState === 'visible') setIsGoogleLoading(false);
     }
   };
 

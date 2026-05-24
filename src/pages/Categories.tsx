@@ -1,9 +1,22 @@
-import { Link } from 'react-router-dom';
-import { MOCK_CATEGORIES } from '../lib/mockData';
-import { getShopPathForCategoryTile } from '../lib/categoryRoutes';
-import { SafeImage } from '../components/SafeImage';
+import { useEffect, useState } from 'react';
+import { CategoryTile } from '../components/CategoryTile';
+import { Product } from '../types';
+import { SupabaseCatalogService, CategoryTileRecord } from '../services/SupabaseCatalogService';
 
 export function CategoriesPage() {
+  const [categories, setCategories] = useState<CategoryTileRecord[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    Promise.all([
+      SupabaseCatalogService.getCategories(),
+      SupabaseCatalogService.getProducts(),
+    ]).then(([categoryData, productData]) => {
+      setCategories(categoryData);
+      setProducts(productData);
+    });
+  }, []);
+
   return (
     <div className="bg-offwhite min-h-screen py-16 sm:py-24">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10">
@@ -15,30 +28,8 @@ export function CategoriesPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {MOCK_CATEGORIES.map((cat) => (
-            <Link 
-              to={getShopPathForCategoryTile(cat.name)} 
-              key={cat.id}
-              className="relative aspect-square overflow-hidden group block"
-              aria-label={`Shop ${cat.name}`}
-            >
-              <SafeImage
-                src={cat.image}
-                alt={cat.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                <span className="text-[10px] tracking-[3px] uppercase text-gold mb-2 opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 delay-75">
-                  {cat.label}
-                </span>
-                <h3 className="serif text-3xl sm:text-4xl text-white font-light">
-                  {cat.name}
-                </h3>
-                <span className="mt-4 px-6 py-2 border border-white text-white text-[10px] tracking-[2px] uppercase opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 delay-150 hover:bg-white hover:text-dark">
-                  View {cat.count}
-                </span>
-              </div>
-            </Link>
+          {categories.map((cat) => (
+            <CategoryTile key={cat.id} category={cat} layout="page" previewProducts={products} />
           ))}
         </div>
       </div>

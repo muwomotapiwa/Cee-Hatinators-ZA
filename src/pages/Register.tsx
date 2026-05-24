@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Eye, EyeOff, Lock, Mail, User, ArrowLeft } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const registerSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters'),
@@ -23,10 +23,12 @@ export function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/account';
+  const { signUpWithPassword } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [firebaseError, setFirebaseError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -37,15 +39,16 @@ export function RegisterPage() {
   const onSubmit = async ({ displayName, email, password }: RegisterFormData) => {
     setIsSubmitting(true);
     setFirebaseError('');
+    setSuccessMessage('');
     try {
-      const credential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(credential.user, { displayName });
+      await signUpWithPassword({ email, password, fullName: displayName });
+      setSuccessMessage('Account created. If Supabase asks for email confirmation, check your inbox before signing in.');
       navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
-      const code = (err as { code?: string }).code;
-      if (code === 'auth/email-already-in-use') {
+      const message = (err as { message?: string }).message || '';
+      if (message.toLowerCase().includes('already registered') || message.toLowerCase().includes('already exists')) {
         setFirebaseError('An account with this email already exists.');
-      } else if (code === 'auth/weak-password') {
+      } else if (message.toLowerCase().includes('password')) {
         setFirebaseError('Password is too weak. Please choose a stronger password.');
       } else {
         setFirebaseError('Registration failed. Please try again.');
@@ -59,12 +62,19 @@ export function RegisterPage() {
     setIsGoogleLoading(true);
     setFirebaseError('');
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      navigate(redirectTo, { replace: true });
-    } catch {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}${window.location.pathname}#${redirectTo}`,
+        },
+      });
+      if (error) throw error;
+    } catch (err: unknown) {
+      console.error(err);
       setFirebaseError('Google sign-in failed. Please try again.');
-    } finally {
       setIsGoogleLoading(false);
+    } finally {
+      if (document.visibilityState === 'visible') setIsGoogleLoading(false);
     }
   };
 
@@ -193,6 +203,11 @@ export function RegisterPage() {
           {firebaseError && (
             <div className="p-3 bg-red-50 border border-red-200 text-[11px] text-red-700">
               {firebaseError}
+            </div>
+          )}
+          {successMessage && (
+            <div className="p-3 bg-green-50 border border-green-200 text-[11px] text-green-700">
+              {successMessage}
             </div>
           )}
 

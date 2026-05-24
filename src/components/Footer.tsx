@@ -1,6 +1,18 @@
 import { Link } from 'react-router-dom';
+import { useSiteSettings } from '../context/SiteSettingsContext';
 
 export function Footer() {
+  const { settings } = useSiteSettings();
+  const socialLinks = [
+    { label: 'IG', url: settings.social_links.instagram },
+    { label: 'FB', url: settings.social_links.facebook },
+    { label: 'YT', url: settings.social_links.youtube },
+    { label: 'PT', url: settings.social_links.pinterest },
+  ];
+  const shippingRates = settings.shipping_summary.rates?.length
+    ? settings.shipping_summary.rates
+    : ['South Africa only', 'Standard delivery: ZAR 99.00', 'Free delivery over ZAR 1,500.00'];
+
   return (
     <footer className="bg-crimson-dark text-mid-gray pt-12 sm:pt-18 pb-10">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-10 sm:gap-15">
@@ -21,12 +33,12 @@ export function Footer() {
             </span>
           </Link>
           <p className="serif text-sm sm:text-base italic text-silver leading-[1.7] mb-7 font-light">
-            Elegant hatinators, fascinators, and headwear styled for weddings, celebrations, and every unforgettable entrance.
+            {settings.footer_statement}
           </p>
           <div className="flex gap-3">
-            {['IG', 'FB', 'YT', 'PT'].map((s) => (
-              <a key={s} href="#" className="w-8 h-8 sm:w-9 sm:h-9 border border-white/10 flex items-center justify-center text-mid-gray text-xs sm:text-sm no-underline transition-all duration-200 hover:border-gold hover:text-gold">
-                {s}
+            {socialLinks.map((social) => (
+              <a key={social.label} href={social.url || '#'} className="w-8 h-8 sm:w-9 sm:h-9 border border-white/10 flex items-center justify-center text-mid-gray text-xs sm:text-sm no-underline transition-all duration-200 hover:border-gold hover:text-gold">
+                {social.label}
               </a>
             ))}
           </div>
@@ -58,7 +70,7 @@ export function Footer() {
               { name: 'Hatinators', path: '/shop?category=Hatinators' },
               { name: 'Fascinators', path: '/shop?category=Fascinators' },
               { name: 'Church Hats', path: '/shop?category=Church Hats' },
-              { name: 'Bonnets', path: '/shop?category=Bonnets' },
+              { name: 'Veilings', path: '/shop?category=Veilings' },
               { name: 'Accessories', path: '/shop?category=Accessories' },
               { name: 'Purple Edit', path: '/shop?category=Hatinators' },
               { name: 'Orchid Purple', path: '/shop?category=Fascinators' }
@@ -73,7 +85,7 @@ export function Footer() {
         <div>
           <h4 className="text-[10px] tracking-[2px] sm:tracking-[3px] uppercase text-offwhite mb-5 sm:mb-6 font-medium border-b border-white/5 pb-2 sm:border-0 sm:pb-0">Shipping Rates</h4>
           <ul className="space-y-3">
-            {['UK: GBP 4.45', 'USA: USD 8.95', 'EU: EUR 3.95', 'West EU: EUR 6.95', 'Free EU over GBP 75'].map((item) => (
+            {shippingRates.map((item) => (
               <li key={item} className="text-[11px] sm:text-[12px] tracking-[0.5px] text-charcoal">{item}</li>
             ))}
           </ul>

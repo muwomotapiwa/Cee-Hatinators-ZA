@@ -4,7 +4,9 @@ import { Button } from './Button';
 import { Product } from '../types';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
 import { ProductColorImage } from './ProductColorImage';
+import { formatMoney } from '../lib/money';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -17,6 +19,7 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
   const [selectedColor, setSelectedColor] = useState('');
   const { addToCart } = useCart();
   const { user } = useAuth();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   useEffect(() => {
     setSelectedColor(product?.colors[0] || '');
@@ -29,9 +32,16 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
     onClose();
   };
 
-  const handleWishlistClick = () => {
-    onClose();
-    window.location.hash = user ? '#/wishlist' : '#/login?redirect=/wishlist';
+  const saved = isWishlisted(product.id);
+
+  const handleWishlistClick = async () => {
+    if (!user) {
+      onClose();
+      window.location.hash = '#/login?redirect=/wishlist';
+      return;
+    }
+
+    await toggleWishlist(product.id);
   };
 
   return (
@@ -59,25 +69,29 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
         <div className="p-6 sm:p-10 lg:p-12">
           <p className="text-[10px] tracking-[2px] text-mid-gray uppercase mb-3">SKU: {product.id.padStart(7, '0')}</p>
           <h2 className="serif text-3xl sm:text-4xl font-normal text-dark leading-[1.2] mb-3 sm:mb-4">{product.name}</h2>
-          <p className="text-xl sm:text-2xl font-medium text-crimson mb-5 sm:mb-6 tracking-[0.5px]">GBP {product.price.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-medium text-crimson mb-5 sm:mb-6 tracking-[0.5px]">{formatMoney(product.price)}</p>
 
           <p className="text-[12px] leading-[1.8] text-charcoal tracking-[0.5px] mb-3 font-light">
             {product.description || `An elegant Cee Hatinators ${product.category.toLowerCase()} designed to finish your occasion look with colour, height, and polish.`}
           </p>
 
-          <div className="text-[10px] tracking-[2px] uppercase text-mid-gray mt-5 mb-2.5">Colour</div>
-          <div className="flex gap-1.5 mb-4">
-            {product.colors.map((color, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`w-5 h-5 rounded-full border-2 transition-all ${selectedColor === color ? 'border-crimson scale-110' : 'border-transparent hover:scale-110'}`}
-                style={{ backgroundColor: color }}
-                aria-label={`Select ${product.name} color ${i + 1}`}
-                onClick={() => setSelectedColor(color)}
-              />
-            ))}
-          </div>
+          {product.colors.length > 0 && (
+            <>
+              <div className="text-[10px] tracking-[2px] uppercase text-mid-gray mt-5 mb-2.5">Colour</div>
+              <div className="flex gap-1.5 mb-4">
+                {product.colors.map((color, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`w-5 h-5 rounded-full border-2 transition-all ${selectedColor === color ? 'border-crimson scale-110' : 'border-transparent hover:scale-110'}`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Select ${product.name} color ${i + 1}`}
+                    onClick={() => setSelectedColor(color)}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
           <div className="text-[10px] tracking-[2px] uppercase text-mid-gray mt-5 mb-2.5">Quantity</div>
           <div className="flex gap-3 items-center mb-5">
@@ -104,19 +118,19 @@ export function ProductDetailModal({ product, isOpen, onClose }: ProductDetailMo
           </div>
 
           <Button variant="crimson" className="w-full mb-3" onClick={handleAddToCart}>
-            Add to Bag - GBP {(product.price * quantity).toFixed(2)}
+            Add to Bag - {formatMoney(product.price * quantity)}
           </Button>
           <button
             type="button"
             className="w-full p-[15px] bg-transparent text-dark border border-silver font-sans text-[11px] tracking-[3px] uppercase cursor-pointer transition-all hover:border-crimson hover:text-crimson flex items-center justify-center gap-2"
             onClick={handleWishlistClick}
           >
-            <Heart size={14} /> Add to Wishlist
+            <Heart size={14} className={saved ? 'fill-current text-crimson' : ''} /> {saved ? 'Remove from Wishlist' : 'Add to Wishlist'}
           </button>
 
           <div className="mt-5 p-4 bg-[#f4eef5] text-[11px] text-charcoal tracking-[0.5px] leading-[1.8]">
             <strong className="text-crimson text-[10px] tracking-[2px] uppercase block mb-2">Styling Note</strong>
-            Pair purple-led pieces with blush, champagne, ivory, soft metallics, or deep plum for a polished finish.
+            {product.stylingNote || 'Pair purple-led pieces with blush, champagne, ivory, soft metallics, or deep plum for a polished finish.'}
           </div>
         </div>
       </div>
