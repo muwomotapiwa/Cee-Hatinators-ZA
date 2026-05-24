@@ -1,6 +1,6 @@
--- Run this after the initial schema so Supabase Auth users receive general_user profiles.
--- This also backfills any Auth users that already exist but are missing from public.profiles.
--- Super users are still assigned separately in docs/supabase-create-super-user-profile.sql.
+-- Fix Auth users that exist without matching public.profiles rows.
+-- Run this in the Supabase SQL Editor.
+-- It is safe to run more than once.
 
 alter table public.profiles
 drop constraint if exists profiles_role_check;
@@ -73,13 +73,14 @@ on conflict (id) do update set
   updated_at = now();
 
 drop policy if exists "profiles insert own visitor" on public.profiles;
+drop policy if exists "profiles update own visitor fields" on public.profiles;
 drop policy if exists "profiles insert own general user" on public.profiles;
+drop policy if exists "profiles update own general user fields" on public.profiles;
+
 create policy "profiles insert own general user"
 on public.profiles for insert
 with check (id = auth.uid() and role = 'general_user');
 
-drop policy if exists "profiles update own visitor fields" on public.profiles;
-drop policy if exists "profiles update own general user fields" on public.profiles;
 create policy "profiles update own general user fields"
 on public.profiles for update
 using (id = auth.uid() and role = 'general_user')
